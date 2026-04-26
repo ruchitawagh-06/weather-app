@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Weather Pro</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Segoe UI;
+  background: linear-gradient(135deg,#0f172a,#1e293b);
+  color: white;
+}
+
+.navbar {
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+.sidebar {
+  width: 200px;
+  background: rgba(255,255,255,0.05);
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.main {
+  flex: 1;
+}
+
+.card {
+  background: rgba(255,255,255,0.1);
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
+input {
+  padding: 10px;
+  width: 70%;
+}
+
+button {
+  padding: 10px;
+  background: #22c55e;
+  color: white;
+  border: none;
+}
+
+@media(max-width:768px){
+  .container {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+<h2>🌦 Weather Pro</h2>
+<a href="/logout" style="color:white;">Logout</a>
+</div>
+
+<div class="container">
+
+<div class="sidebar">
+<h3>Menu</h3>
+<p>🏠 Home</p>
+<p>📊 Dashboard</p>
+</div>
+
+<div class="main">
+
+<form method="POST">
+<input name="city" placeholder="Enter city">
+<button>Search</button>
+</form>
+
+{% if weather %}
+<div class="card">
+<h2>{{weather.city}}</h2>
+<p>🌡 {{weather.temp}}°C</p>
+<p>💧 {{weather.humidity}}%</p>
+<p>☁ {{weather.desc}}</p>
+</div>
+{% endif %}
+
+{% if advice %}
+<div class="card">
+<h3>🤖 AI Suggestion</h3>
+<p>{{advice}}</p>
+</div>
+{% endif %}
+
+{% if map_url %}
+<div class="card">
+<h3>📍 Map</h3>
+<a href="{{map_url}}" target="_blank">Open Location</a>
+</div>
+{% endif %}
+
+{% if forecast %}
+<div class="card">
+<h3>📅 Forecast</h3>
+{% for f in forecast %}
+<p>{{f.temp}}°C - {{f.desc}}</p>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if temps %}
+<div class="card">
+<h3>📊 Chart</h3>
+<canvas id="chart"></canvas>
+</div>
+{% endif %}
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% if temps %}
+<script>
+new Chart(document.getElementById('chart'), {
+  type: 'line',
+  data: {
+    labels: {{ labels | safe }},
+    datasets: [{
+      label: 'Temperature',
+      data: {{ temps | safe }},
+      borderColor: '#38bdf8'
+    }]
+  }
+});
+</script>
+{% endif %}
+
+</body>
+</html>
