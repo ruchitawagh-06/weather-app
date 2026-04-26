@@ -5,9 +5,10 @@ import os
 app = Flask(__name__)
 app.secret_key = "1234"
 
-API_KEY = "54ff43f30c3097a69d22d7f5ff91701f"
+API_KEY = os.environ.get("API_KEY")  # 🔐 safer for deployment
 
 
+# 🤖 AI Suggestion
 def chatbot(temp, desc):
     desc = desc.lower()
     if "rain" in desc:
@@ -29,16 +30,14 @@ def home():
     forecast = None
     temps = []
     labels = []
-    map_url = None
     advice = None
+    error = None
 
     if request.method == "POST":
+        city = request.form.get("city")
+
         try:
-            city = request.form["city"]
-
-            map_url = f"https://www.google.com/maps?q={city}"
-
-            # Weather API
+            # 🌦 Current weather
             url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
             res = requests.get(url).json()
 
@@ -50,8 +49,10 @@ def home():
                     "desc": res["weather"][0]["description"]
                 }
                 advice = chatbot(weather["temp"], weather["desc"])
+            else:
+                error = "❌ City not found"
 
-            # Forecast API
+            # 📊 Forecast
             f_url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={API_KEY}&units=metric"
             f_res = requests.get(f_url).json()
 
@@ -71,20 +72,21 @@ def home():
 
         except Exception as e:
             print("ERROR:", e)
+            error = "⚠ Something went wrong"
 
     return render_template("index.html",
                            weather=weather,
                            forecast=forecast,
                            temps=temps,
                            labels=labels,
-                           map_url=map_url,
-                           advice=advice)
+                           advice=advice,
+                           error=error)
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        if request.form["username"] == "admin" and request.form["password"] == "1234":
+        if request.form.get("username") == "admin" and request.form.get("password") == "1234":
             session["user"] = "admin"
             return redirect("/")
     return render_template("login.html")
@@ -96,6 +98,7 @@ def logout():
     return redirect("/login")
 
 
+# 🚀 Render compatible
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
