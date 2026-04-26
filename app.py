@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 app.secret_key = "1234"
 
-API_KEY = os.environ.get("API_KEY")  # 🔐 safer for deployment
+API_KEY = os.environ.get("54ff43f30c3097a69d22d7f5ff91701f")  # 🔐 safer for deployment
 
 
 # 🤖 AI Suggestion
