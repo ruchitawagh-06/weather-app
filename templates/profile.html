@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Profile</title>
+
+<style>
+body {
+    font-family: Poppins;
+    background: linear-gradient(135deg,#0f172a,#1e293b);
+    color: white;
+    text-align: center;
+    margin-top: 100px;
+}
+
+.card {
+    background: rgba(255,255,255,0.1);
+    padding: 30px;
+    border-radius: 15px;
+    display: inline-block;
+}
+
+a {
+    color: #38bdf8;
+    display: block;
+    margin-top: 10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>👤 User Profile</h2>
+
+<p><b>Username:</b> {{ user }}</p>
+
+<a href="/">🏠 Go to Dashboard</a>
+<a href="/logout">🚪 Logout</a>
+
+</div>
+
+</body>
+</html>
