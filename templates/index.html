@@ -1,112 +1,183 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Weather Pro</title>
+<title>Weather Dashboard</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-    font-family: 'Poppins', sans-serif;
-    margin: 0;
-    background: linear-gradient(135deg,#0f172a,#1e293b);
-    color: white;
+:root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #ffffff;
 }
 
-.container {
-    max-width: 900px;
-    margin: auto;
+.light {
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #000000;
+}
+
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    background: #111827;
+    height: 100vh;
     padding: 20px;
 }
 
-h1 {
-    text-align: center;
+.sidebar h2 {
+    color: #38bdf8;
 }
 
-.search {
+.sidebar a {
+    display: block;
+    margin: 15px 0;
+    color: white;
+    text-decoration: none;
+}
+
+/* Main */
+.main {
+    flex: 1;
+    padding: 20px;
+}
+
+/* Navbar */
+.navbar {
     display: flex;
-    justify-content: center;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Toggle */
+.toggle {
+    cursor: pointer;
+    padding: 8px 12px;
+    background: #22c55e;
+    border-radius: 8px;
+}
+
+/* Search */
+.search {
+    margin-top: 20px;
 }
 
 input {
     padding: 10px;
+    width: 300px;
     border-radius: 8px;
     border: none;
-    width: 60%;
 }
 
 button {
-    padding: 10px 20px;
+    padding: 10px;
     border-radius: 8px;
     border: none;
     background: #22c55e;
     color: white;
+    cursor: pointer;
 }
 
+/* Cards */
 .card {
-    background: rgba(255,255,255,0.1);
-    margin-top: 20px;
+    background: var(--card);
     padding: 20px;
+    margin-top: 20px;
     border-radius: 15px;
-    text-align: center;
 }
 
+/* Grid */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+    gap: 20px;
+}
+
+/* Error */
 .error {
     color: red;
-    text-align: center;
-    margin-top: 10px;
 }
-
-.loader {
-    display: none;
-    text-align: center;
-}
-
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<h1>🌤 Weather Pro</h1>
-
-<form method="POST" onsubmit="load()">
-<div class="search">
-<input name="city" placeholder="Enter city" required>
-<button id="btn">Search</button>
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2>🌤 Weather</h2>
+    <a href="/">🏠 Dashboard</a>
+    <a href="/profile">👤 Profile</a>
+    <a href="/logout">🚪 Logout</a>
 </div>
+
+<!-- Main -->
+<div class="main">
+
+<div class="navbar">
+    <h1>Dashboard</h1>
+    <div class="toggle" onclick="toggleMode()">🌙 Toggle</div>
+</div>
+
+<!-- Search -->
+<form method="POST" class="search">
+<input name="city" placeholder="Enter city">
+<button>Search</button>
 </form>
 
-<div class="loader" id="loader">Loading...</div>
-
 {% if error %}
-<div class="error">{{ error }}</div>
+<p class="error">{{ error }}</p>
 {% endif %}
 
+<!-- Weather Cards -->
 {% if weather %}
+<div class="grid">
+
+<div class="card">
+<h3>🌡 Temperature</h3>
+<p>{{ weather.temp }} °C</p>
+</div>
+
+<div class="card">
+<h3>💧 Humidity</h3>
+<p>{{ weather.humidity }}%</p>
+</div>
+
+<div class="card">
+<h3>☁ Condition</h3>
+<p>{{ weather.desc }}</p>
+</div>
+
+</div>
+
 <div class="card">
 <h2>{{ weather.city }}</h2>
-<p>🌡 {{ weather.temp }}°C</p>
-<p>💧 {{ weather.humidity }}%</p>
-<p>☁ {{ weather.desc }}</p>
 <p style="color:lightgreen">{{ advice }}</p>
 </div>
 {% endif %}
 
+<!-- Forecast -->
 {% if forecast %}
 <div class="card">
-<h3>Forecast</h3>
+<h3>📅 5-Day Forecast</h3>
 {% for day in forecast %}
 <p>{{ day.temp }}°C - {{ day.desc }}</p>
 {% endfor %}
 </div>
 {% endif %}
 
+<!-- Chart -->
 {% if temps %}
 <div class="card">
 <canvas id="chart"></canvas>
@@ -116,17 +187,21 @@ button {
 </div>
 
 <script>
-function load(){
-document.getElementById("loader").style.display="block";
-document.getElementById("btn").disabled=true;
+function toggleMode(){
+    document.body.classList.toggle("light");
 }
 
+// Chart
 {% if temps %}
-new Chart(document.getElementById("chart"),{
+new Chart(document.getElementById('chart'),{
 type:'line',
 data:{
 labels: {{ labels|tojson }},
-datasets:[{data: {{ temps|tojson }}}]
+datasets:[{
+label:'Temperature',
+data: {{ temps|tojson }},
+borderWidth:2
+}]
 }
 });
 {% endif %}
