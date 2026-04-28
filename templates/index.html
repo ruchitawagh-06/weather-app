@@ -7,75 +7,56 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-
 body{
-    font-family:'Poppins',sans-serif;
-    display:flex;
-    background:linear-gradient(135deg,#0f172a,#1e293b);
-    color:white;
+font-family:Poppins;
+background:linear-gradient(135deg,#0f172a,#1e293b);
+color:white;
+display:flex;
+margin:0;
 }
 
 /* Sidebar */
 .sidebar{
-    width:220px;
-    height:100vh;
-    background:rgba(0,0,0,0.4);
-    backdrop-filter:blur(15px);
-    padding:20px;
+width:220px;
+background:#020617;
+padding:20px;
 }
+.sidebar a{display:block;margin:10px 0;color:white;text-decoration:none;}
 
-.sidebar a{
-    display:block;
-    margin:15px 0;
-    color:white;
-    text-decoration:none;
-}
-
+/* Main */
 .main{flex:1;padding:20px;}
 
 .card{
-    background:rgba(255,255,255,0.08);
-    backdrop-filter:blur(20px);
-    padding:20px;
-    margin-top:20px;
-    border-radius:20px;
+background:rgba(255,255,255,0.08);
+padding:20px;
+border-radius:15px;
+margin-top:20px;
 }
 
-button{
-    padding:10px;
-    border-radius:10px;
-    border:none;
-    background:#22c55e;
-    color:white;
-    cursor:pointer;
+/* Forecast */
+.forecast{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+.fcard{
+background:rgba(255,255,255,0.1);
+padding:10px;
+border-radius:10px;
+width:100px;
+text-align:center;
 }
 
-input{
-    padding:10px;
-    border-radius:10px;
-    border:none;
-}
-
-/* MAP */
-#map{
-    height:300px;
-    border-radius:15px;
-}
-
-/* FULLSCREEN */
+/* Map */
+#map{height:300px;border-radius:10px;}
 .fullscreen-map{
-    position:fixed !important;
-    top:0;
-    left:0;
-    width:100vw !important;
-    height:100vh !important;
-    z-index:9999;
+position:fixed;
+top:0;left:0;width:100%;height:100%;
+z-index:9999;
 }
 </style>
 </head>
@@ -94,14 +75,13 @@ input{
 <h1>Weather Pro</h1>
 
 <form method="POST">
-<input name="city" placeholder="Enter city">
+<input name="city">
 <button>Search</button>
 </form>
 
-<br>
-<button onclick="getLocation()">📍 Use Location</button>
+<button onclick="getLocation()">📍 Location</button>
 
-<!-- WEATHER -->
+<!-- CURRENT WEATHER -->
 {% if weather %}
 <div class="card">
 <h2>{{ weather.city }}</h2>
@@ -110,21 +90,43 @@ input{
 </div>
 {% endif %}
 
+<!-- FORECAST -->
+{% if forecast %}
+<div class="card">
+<h3>📅 Forecast</h3>
+<div class="forecast">
+{% for d in forecast %}
+<div class="fcard">
+<p>{{ d.temp }}°C</p>
+<p>{{ d.desc }}</p>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
+<!-- CHART -->
+{% if temps %}
+<div class="card">
+<canvas id="chart"></canvas>
+</div>
+{% endif %}
+
 <!-- MAP -->
 <div class="card">
-<h3>🌍 Live Weather Map</h3>
+<h3>🌍 Map</h3>
 
-<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-<button onclick="setMap('normal')">🗺️ Normal</button>
-<button onclick="setMap('satellite')">🛰️ Satellite</button>
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+<button onclick="setMap('normal')">Normal</button>
+<button onclick="setMap('satellite')">Satellite</button>
 
 <button onclick="setLayer('temp')">🔥 Temp</button>
 <button onclick="setLayer('rain')">🌧️ Rain</button>
 <button onclick="setLayer('clouds')">☁️ Clouds</button>
 <button onclick="setLayer('wind')">🌪️ Wind</button>
 
-<button onclick="setLayer('clear')">❌ Clear</button>
-<button onclick="toggleFullscreen()">🖥️ Fullscreen</button>
+<button onclick="setLayer('clear')">Clear</button>
+<button onclick="toggleFullscreen()">Fullscreen</button>
 </div>
 
 <div id="map"></div>
@@ -134,122 +136,103 @@ input{
 
 <script>
 
-let map;
-let baseLayer;
-let overlayLayer;
-const API_KEY = "{{ api_key }}";
+let map, baseLayer, overlayLayer;
+const API_KEY="{{ api_key }}";
 
 // LOAD MAP
-function loadMap(lat, lon, weatherText=""){
+function loadMap(lat,lon,text=""){
+if(map){map.remove();}
 
-if(map){
-    map.remove();
-}
+map=L.map('map').setView([lat,lon],10);
 
-map = L.map('map').setView([lat, lon], 10);
-
-baseLayer = L.tileLayer(
+baseLayer=L.tileLayer(
 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 ).addTo(map);
 
-L.marker([lat, lon]).addTo(map)
-.bindPopup(`<b>📍 Location</b><br>${weatherText}`)
+L.marker([lat,lon]).addTo(map)
+.bindPopup(text)
 .openPopup();
 }
 
-// BASE MAP SWITCH
+// MAP TYPE
 function setMap(type){
-
-if(!map) return;
-
 map.removeLayer(baseLayer);
 
-if(type==="satellite"){
-    baseLayer = L.tileLayer(
-        'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
-    ).addTo(map);
+if(type=="satellite"){
+baseLayer=L.tileLayer(
+'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+).addTo(map);
 }else{
-    baseLayer = L.tileLayer(
-        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-    ).addTo(map);
+baseLayer=L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+).addTo(map);
 }
 }
 
 // WEATHER LAYERS
 function setLayer(type){
+if(overlayLayer){map.removeLayer(overlayLayer);}
 
-if(!map) return;
+if(type=="temp"){
+overlayLayer=L.tileLayer(
+`https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${API_KEY}`
+).addTo(map);
 
-if(overlayLayer){
-    map.removeLayer(overlayLayer);
-}
+}else if(type=="rain"){
+overlayLayer=L.tileLayer(
+`https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${API_KEY}`
+).addTo(map);
 
-if(type==="temp"){
-    overlayLayer = L.tileLayer(
-        `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${API_KEY}`,
-        {opacity:0.5}
-    ).addTo(map);
+}else if(type=="clouds"){
+overlayLayer=L.tileLayer(
+`https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${API_KEY}`
+).addTo(map);
 
-}else if(type==="rain"){
-    overlayLayer = L.tileLayer(
-        `https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${API_KEY}`,
-        {opacity:0.6}
-    ).addTo(map);
-
-}else if(type==="clouds"){
-    overlayLayer = L.tileLayer(
-        `https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${API_KEY}`,
-        {opacity:0.5}
-    ).addTo(map);
-
-}else if(type==="wind"){
-    overlayLayer = L.tileLayer(
-        `https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${API_KEY}`,
-        {opacity:0.6}
-    ).addTo(map);
-
-}else if(type==="clear"){
-    overlayLayer = null;
+}else if(type=="wind"){
+overlayLayer=L.tileLayer(
+`https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${API_KEY}`
+).addTo(map);
 }
 }
 
 // CLOUD ANIMATION
 setInterval(()=>{
-    if(overlayLayer){
-        overlayLayer.setUrl(overlayLayer._url);
-    }
-}, 5000);
+if(overlayLayer){
+overlayLayer.setUrl(overlayLayer._url);
+}
+},5000);
 
 // LOCATION
 function getLocation(){
 navigator.geolocation.getCurrentPosition(pos=>{
-
-let lat = pos.coords.latitude;
-let lon = pos.coords.longitude;
+let lat=pos.coords.latitude;
+let lon=pos.coords.longitude;
 
 fetch(`/location?lat=${lat}&lon=${lon}`)
 .then(r=>r.json())
 .then(d=>{
-
-document.querySelector("input[name='city']").value = d.city;
-
-let weatherInfo = `${d.temp || ''}°C ${d.desc || ''}`;
-
-loadMap(lat, lon, weatherInfo);
-
+document.querySelector("input[name='city']").value=d.city;
+loadMap(lat,lon,`${d.temp}°C ${d.desc}`);
 });
 });
 }
 
 // FULLSCREEN
 function toggleFullscreen(){
-const mapDiv = document.getElementById("map");
-mapDiv.classList.toggle("fullscreen-map");
-
-setTimeout(()=>{
-    map.invalidateSize();
-},300);
+document.getElementById("map").classList.toggle("fullscreen-map");
+setTimeout(()=>{map.invalidateSize();},300);
 }
+
+// CHART
+{% if temps %}
+new Chart(document.getElementById("chart"),{
+type:'line',
+data:{
+labels:{{labels|tojson}},
+datasets:[{data:{{temps|tojson}},borderColor:"cyan"}]
+}
+});
+{% endif %}
 
 </script>
 
