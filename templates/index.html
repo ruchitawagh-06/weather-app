@@ -1,36 +1,100 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Weather Dashboard</title>
+<title>Weather Pro</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
-    font-family: Poppins;
-    background: #0f172a;
-    color: white;
+    font-family: 'Poppins', sans-serif;
     margin: 0;
+    background: linear-gradient(135deg,#0f172a,#1e293b);
+    color: white;
 }
 
+/* Container */
 .container {
-    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+    padding: 30px;
 }
 
-.card {
-    background: #1e293b;
-    padding: 20px;
-    margin-top: 20px;
+/* Header */
+h1 {
+    font-weight: 700;
+}
+
+/* Navbar links */
+.top-links a {
+    color: #38bdf8;
+    margin-right: 10px;
+    text-decoration: none;
+}
+
+/* Search box */
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+input {
+    flex: 1;
+    padding: 12px;
     border-radius: 10px;
+    border: none;
 }
 
 button {
-    padding: 10px;
-    border-radius: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
     border: none;
     background: #22c55e;
     color: white;
     cursor: pointer;
+    font-weight: 500;
+}
+
+button:hover {
+    background: #16a34a;
+}
+
+/* Glass card */
+.card {
+    background: rgba(255,255,255,0.08);
+    padding: 25px;
+    margin-top: 20px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* Weather title */
+.city {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+/* Forecast grid */
+.forecast {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px,1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.forecast div {
+    background: rgba(255,255,255,0.05);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+/* Error */
+.error {
+    color: #ff6b6b;
+    margin-top: 10px;
 }
 </style>
 </head>
@@ -39,49 +103,60 @@ button {
 
 <div class="container">
 
-<h1>🌤 Weather App</h1>
+<h1>🌤 Weather Pro</h1>
 
-<a href="/profile">👤 Profile</a> |
-<a href="/logout">Logout</a>
+<div class="top-links">
+<a href="/profile">👤 Profile</a>
+<a href="/logout">🚪 Logout</a>
+</div>
 
 <!-- Search -->
-<form method="POST">
+<form method="POST" class="search-box">
 <input name="city" placeholder="Enter city">
 <button>Search</button>
 </form>
 
-<br>
-
-<!-- 📍 Location Button (FIXED) -->
+<!-- Location -->
 <button type="button" onclick="getLocation()">📍 Use My Location</button>
 
 {% if error %}
-<p style="color:red">{{ error }}</p>
+<p class="error">{{ error }}</p>
 {% endif %}
 
+<!-- Weather -->
 {% if weather %}
 <div class="card">
-<h2>{{ weather.city }}</h2>
-<p>{{ weather.temp }}°C</p>
-<p>{{ weather.desc }}</p>
+<p class="city">{{ weather.city }}</p>
+
+<p>🌡 {{ weather.temp }}°C</p>
+<p>☁ {{ weather.desc }}</p>
 
 <a href="https://www.google.com/maps?q={{ weather.city }}" target="_blank">
-📍 Open Map
+📍 View on Map
 </a>
 
-<p>{{ advice }}</p>
+<p style="color:#4ade80;">{{ advice }}</p>
 </div>
 {% endif %}
 
+<!-- Forecast -->
 {% if forecast %}
 <div class="card">
-<h3>Forecast</h3>
+<h3>📅 5-Day Forecast</h3>
+
+<div class="forecast">
 {% for day in forecast %}
-<p>{{ day.temp }}°C - {{ day.desc }}</p>
+<div>
+<p><b>{{ day.temp }}°C</b></p>
+<p>{{ day.desc }}</p>
+</div>
 {% endfor %}
+</div>
+
 </div>
 {% endif %}
 
+<!-- Chart -->
 {% if temps %}
 <div class="card">
 <canvas id="chart"></canvas>
@@ -92,57 +167,32 @@ button {
 
 <script>
 
-// 🌍 FIXED LOCATION CODE
+// 🌍 Location
 function getLocation(){
-    console.log("Button clicked");
+    navigator.geolocation.getCurrentPosition(function(pos){
+        let lat = pos.coords.latitude;
+        let lon = pos.coords.longitude;
 
-    if (!navigator.geolocation){
-        alert("Geolocation not supported");
-        return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-        function(position){
-            let lat = position.coords.latitude;
-            let lon = position.coords.longitude;
-
-            console.log("Lat:", lat, "Lon:", lon);
-
-            fetch(`/location?lat=${lat}&lon=${lon}`)
-            .then(res => res.json())
-            .then(data => {
-                console.log("API Response:", data);
-
-                if(data.city){
-                    document.querySelector("input[name='city']").value = data.city;
-                } else {
-                    alert("City not detected");
-                }
-            })
-            .catch(err => {
-                console.log("Error:", err);
-                alert("Error fetching location");
-            });
-        },
-        function(error){
-            console.log("Location error:", error);
-            alert("Permission denied or error");
-        }
-    );
+        fetch(`/location?lat=${lat}&lon=${lon}`)
+        .then(res => res.json())
+        .then(data => {
+            document.querySelector("input[name='city']").value = data.city;
+        });
+    });
 }
 
 // 📊 Chart
 {% if temps %}
-new Chart(document.getElementById("chart"), {
-    type: 'line',
-    data: {
-        labels: {{ labels|tojson }},
-        datasets: [{
-            label: "Temperature",
-            data: {{ temps|tojson }},
-            borderWidth: 2
-        }]
-    }
+new Chart(document.getElementById("chart"),{
+type:'line',
+data:{
+labels: {{ labels|tojson }},
+datasets:[{
+label:'Temperature',
+data: {{ temps|tojson }},
+borderWidth:2
+}]
+}
 });
 {% endif %}
 
