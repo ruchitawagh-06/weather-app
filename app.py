@@ -7,11 +7,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = "1234"
 
-# 📦 Database config
+# 📦 Database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
 
-# 👤 User table
+# 👤 User model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -21,11 +21,10 @@ class User(db.Model):
 with app.app_context():
     db.create_all()
 
-# 🌦 API KEY
 API_KEY = os.environ.get("API_KEY")
 
 
-# 🤖 AI suggestion
+# 🤖 AI Suggestion
 def chatbot(temp, desc):
     desc = desc.lower()
     if "rain" in desc:
@@ -37,16 +36,14 @@ def chatbot(temp, desc):
     return "🌤 Nice weather"
 
 
-# 🔐 REGISTER
-@app.route("/register", methods=["GET", "POST"])
+# 🔐 Register
+@app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
         username = request.form["username"]
         password = generate_password_hash(request.form["password"])
 
-        # prevent duplicate users
-        existing = User.query.filter_by(username=username).first()
-        if existing:
+        if User.query.filter_by(username=username).first():
             return "User already exists"
 
         user = User(username=username, password=password)
@@ -58,8 +55,8 @@ def register():
     return render_template("register.html")
 
 
-# 🔐 LOGIN
-@app.route("/login", methods=["GET", "POST"])
+# 🔐 Login
+@app.route("/login", methods=["GET","POST"])
 def login():
     error = None
 
@@ -75,15 +72,24 @@ def login():
     return render_template("login.html", error=error)
 
 
-# 🔓 LOGOUT
+# 🔓 Logout
 @app.route("/logout")
 def logout():
     session.pop("user", None)
     return redirect("/login")
 
 
-# 🌤 HOME
-@app.route("/", methods=["GET", "POST"])
+# 👤 Profile Page
+@app.route("/profile")
+def profile():
+    if "user" not in session:
+        return redirect("/login")
+
+    return render_template("profile.html", user=session["user"])
+
+
+# 🌤 Home
+@app.route("/", methods=["GET","POST"])
 def home():
     if "user" not in session:
         return redirect("/login")
@@ -141,7 +147,7 @@ def home():
                            error=error)
 
 
-# 🚀 Render run
+# 🚀 Run (Render compatible)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
