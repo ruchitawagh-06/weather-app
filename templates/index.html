@@ -26,9 +26,7 @@ body {font-family:Poppins;background:#0f172a;color:white;margin:0;}
 <button>Search</button>
 </form>
 
-<button onclick="getLocation()">📍 Use My Location</button>
-
-{% if error %}
+<button type="button" onclick="getLocation()">📍 Use My Location</button>
 <p style="color:red">{{ error }}</p>
 {% endif %}
 
@@ -65,14 +63,42 @@ body {font-family:Poppins;background:#0f172a;color:white;margin:0;}
 
 <script>
 function getLocation(){
-navigator.geolocation.getCurrentPosition(function(pos){
-let lat=pos.coords.latitude;
-let lon=pos.coords.longitude;
+    console.log("Button clicked");   // debug
 
-fetch(`/location?lat=${lat}&lon=${lon}`)
-.then(res=>res.json())
-.then(data=>{
-document.querySelector("input[name='city']").value=data.city;
+    if (!navigator.geolocation){
+        alert("Geolocation not supported");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        function(position){
+            let lat = position.coords.latitude;
+            let lon = position.coords.longitude;
+
+            console.log("Lat:", lat, "Lon:", lon);  // debug
+
+            fetch(`/location?lat=${lat}&lon=${lon}`)
+            .then(res => res.json())
+            .then(data => {
+                console.log("Response:", data);  // debug
+
+                if(data.city){
+                    document.querySelector("input[name='city']").value = data.city;
+                } else {
+                    alert("City not detected");
+                }
+            })
+            .catch(err => {
+                console.log("Fetch error:", err);
+                alert("Error getting city");
+            });
+        },
+        function(error){
+            console.log("Location error:", error);
+            alert("Permission denied or location error");
+        }
+    );
+}
 });
 });
 }
