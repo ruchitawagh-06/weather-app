@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weather Pro</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- PWA -->
-<link rel="manifest" href="/static/manifest.json">
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -19,12 +19,6 @@ body{
     display:flex;
     background:linear-gradient(135deg,#0f172a,#1e293b);
     color:white;
-}
-
-/* LIGHT MODE */
-.light-mode{
-    background:#f1f5f9;
-    color:#111;
 }
 
 /* Sidebar */
@@ -43,7 +37,6 @@ body{
     text-decoration:none;
 }
 
-/* Main */
 .main{flex:1;padding:20px;}
 
 .card{
@@ -54,21 +47,8 @@ body{
     border-radius:20px;
 }
 
-/* Search */
-.search{
-    display:flex;
-    gap:10px;
-    margin-top:15px;
-}
-
-input{
-    padding:12px;
-    border-radius:10px;
-    border:none;
-}
-
 button{
-    padding:12px;
+    padding:10px;
     border-radius:10px;
     border:none;
     background:#22c55e;
@@ -76,214 +56,200 @@ button{
     cursor:pointer;
 }
 
-/* Loader */
-.loader{display:none;margin-top:20px;}
-.spinner{
-    width:40px;height:40px;
-    border:4px solid #ccc;
-    border-top:4px solid #22c55e;
-    border-radius:50%;
-    animation:spin 1s linear infinite;
-}
-@keyframes spin{100%{transform:rotate(360deg);}}
-
-/* Forecast */
-.forecast-row{
-    display:flex;
-    gap:20px;
-    flex-wrap:wrap;
-    margin-top:20px;
+input{
+    padding:10px;
+    border-radius:10px;
+    border:none;
 }
 
-.forecast-card{
-    background:rgba(255,255,255,0.1);
-    padding:20px;
+/* MAP */
+#map{
+    height:300px;
     border-radius:15px;
-    width:140px;
-    text-align:center;
 }
 
-.icon{font-size:28px;}
-.day{font-weight:600;}
-
-/* 🌧️ Rain */
-.rain{
-    position:fixed;
-    width:100%;
-    height:100%;
-    pointer-events:none;
-}
-.drop{
-    position:absolute;
-    width:2px;
-    height:15px;
-    background:rgba(255,255,255,0.5);
-    animation:fall linear infinite;
-}
-@keyframes fall{
-    0%{transform:translateY(-100px);}
-    100%{transform:translateY(100vh);}
-}
-
-/* Responsive */
-@media(max-width:768px){
-    body{flex-direction:column;}
-    .sidebar{
-        width:100%;
-        display:flex;
-        justify-content:space-around;
-    }
+/* FULLSCREEN */
+.fullscreen-map{
+    position:fixed !important;
+    top:0;
+    left:0;
+    width:100vw !important;
+    height:100vh !important;
+    z-index:9999;
 }
 </style>
 </head>
 
 <body>
 
-<div id="rain" class="rain"></div>
-
-<!-- Sidebar -->
 <div class="sidebar">
 <h2>🌤 Weather</h2>
-<a href="/">🏠 Dashboard</a>
-<a href="/profile">👤 Profile</a>
-<a href="/logout">🚪 Logout</a>
-<button onclick="toggleTheme()">🌙 Toggle</button>
+<a href="/">Dashboard</a>
+<a href="/profile">Profile</a>
+<a href="/logout">Logout</a>
 </div>
 
-<!-- Main -->
 <div class="main">
 
 <h1>Weather Pro</h1>
 
-<form method="POST" class="search" onsubmit="showLoader()">
+<form method="POST">
 <input name="city" placeholder="Enter city">
 <button>Search</button>
 </form>
 
 <br>
-<button type="button" onclick="getLocation()">📍 Use My Location</button>
+<button onclick="getLocation()">📍 Use Location</button>
 
-<div id="loader" class="loader">
-<div class="spinner"></div>
-<p>Loading...</p>
-</div>
-
+<!-- WEATHER -->
 {% if weather %}
 <div class="card">
 <h2>{{ weather.city }}</h2>
-<p>🌡 {{ weather.temp }}°C</p>
+<p>{{ weather.temp }}°C</p>
 <p>{{ weather.desc }}</p>
-<p style="color:#4ade80">{{ advice }}</p>
 </div>
 {% endif %}
 
-{% if forecast %}
+<!-- MAP -->
 <div class="card">
-<h3>📅 Forecast</h3>
+<h3>🌍 Live Weather Map</h3>
 
-<div class="forecast-row">
-{% for day in forecast %}
-{% set days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"] %}
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+<button onclick="setMap('normal')">🗺️ Normal</button>
+<button onclick="setMap('satellite')">🛰️ Satellite</button>
 
-<div class="forecast-card">
-<div class="day">{{ days[loop.index0 % 7] }}</div>
+<button onclick="setLayer('temp')">🔥 Temp</button>
+<button onclick="setLayer('rain')">🌧️ Rain</button>
+<button onclick="setLayer('clouds')">☁️ Clouds</button>
+<button onclick="setLayer('wind')">🌪️ Wind</button>
 
-<div class="icon">
-{% if "cloud" in day.desc %}☁️
-{% elif "rain" in day.desc %}🌧️
-{% elif "clear" in day.desc %}☀️
-{% else %}🌤️
-{% endif %}
+<button onclick="setLayer('clear')">❌ Clear</button>
+<button onclick="toggleFullscreen()">🖥️ Fullscreen</button>
 </div>
 
-<p>{{ day.temp }}°C</p>
-<p>{{ day.desc }}</p>
-</div>
-
-{% endfor %}
-</div>
-</div>
-{% endif %}
-
-{% if temps %}
-<div class="card">
-<canvas id="chart"></canvas>
-</div>
-{% endif %}
-
-<!-- Chatbot -->
-<div class="card">
-<h3>🤖 Assistant</h3>
-<input id="chatInput">
-<button onclick="askAI()">Ask</button>
-<p id="chatResponse"></p>
+<div id="map"></div>
 </div>
 
 </div>
 
 <script>
 
-// Loader
-function showLoader(){
-document.getElementById("loader").style.display="block";
+let map;
+let baseLayer;
+let overlayLayer;
+const API_KEY = "{{ api_key }}";
+
+// LOAD MAP
+function loadMap(lat, lon, weatherText=""){
+
+if(map){
+    map.remove();
 }
 
-// Location
+map = L.map('map').setView([lat, lon], 10);
+
+baseLayer = L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+).addTo(map);
+
+L.marker([lat, lon]).addTo(map)
+.bindPopup(`<b>📍 Location</b><br>${weatherText}`)
+.openPopup();
+}
+
+// BASE MAP SWITCH
+function setMap(type){
+
+if(!map) return;
+
+map.removeLayer(baseLayer);
+
+if(type==="satellite"){
+    baseLayer = L.tileLayer(
+        'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+    ).addTo(map);
+}else{
+    baseLayer = L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    ).addTo(map);
+}
+}
+
+// WEATHER LAYERS
+function setLayer(type){
+
+if(!map) return;
+
+if(overlayLayer){
+    map.removeLayer(overlayLayer);
+}
+
+if(type==="temp"){
+    overlayLayer = L.tileLayer(
+        `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${API_KEY}`,
+        {opacity:0.5}
+    ).addTo(map);
+
+}else if(type==="rain"){
+    overlayLayer = L.tileLayer(
+        `https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${API_KEY}`,
+        {opacity:0.6}
+    ).addTo(map);
+
+}else if(type==="clouds"){
+    overlayLayer = L.tileLayer(
+        `https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${API_KEY}`,
+        {opacity:0.5}
+    ).addTo(map);
+
+}else if(type==="wind"){
+    overlayLayer = L.tileLayer(
+        `https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${API_KEY}`,
+        {opacity:0.6}
+    ).addTo(map);
+
+}else if(type==="clear"){
+    overlayLayer = null;
+}
+}
+
+// CLOUD ANIMATION
+setInterval(()=>{
+    if(overlayLayer){
+        overlayLayer.setUrl(overlayLayer._url);
+    }
+}, 5000);
+
+// LOCATION
 function getLocation(){
 navigator.geolocation.getCurrentPosition(pos=>{
-fetch(`/location?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`)
+
+let lat = pos.coords.latitude;
+let lon = pos.coords.longitude;
+
+fetch(`/location?lat=${lat}&lon=${lon}`)
 .then(r=>r.json())
 .then(d=>{
-document.querySelector("input[name='city']").value=d.city;
+
+document.querySelector("input[name='city']").value = d.city;
+
+let weatherInfo = `${d.temp || ''}°C ${d.desc || ''}`;
+
+loadMap(lat, lon, weatherInfo);
+
 });
 });
 }
 
-// Chatbot
-function askAI(){
-fetch("/chat",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({msg:chatInput.value})
-})
-.then(r=>r.json())
-.then(d=>chatResponse.innerText=d.reply);
-}
+// FULLSCREEN
+function toggleFullscreen(){
+const mapDiv = document.getElementById("map");
+mapDiv.classList.toggle("fullscreen-map");
 
-// 🌧️ Rain
-function createRain(){
-let rain=document.getElementById("rain");
-rain.innerHTML="";
-for(let i=0;i<80;i++){
-let d=document.createElement("div");
-d.className="drop";
-d.style.left=Math.random()*100+"vw";
-d.style.animationDuration=(0.5+Math.random())+"s";
-rain.appendChild(d);
+setTimeout(()=>{
+    map.invalidateSize();
+},300);
 }
-}
-
-{% if weather %}
-if("{{ weather.desc }}".includes("rain")){
-createRain();
-}
-{% endif %}
-
-// Theme toggle
-function toggleTheme(){
-document.body.classList.toggle("light-mode");
-}
-
-// Chart
-{% if temps %}
-new Chart(document.getElementById("chart"),{
-type:'line',
-data:{
-labels:{{labels|tojson}},
-datasets:[{data:{{temps|tojson}}}]
-}
-});
-{% endif %}
 
 </script>
 
