@@ -6,9 +6,32 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {font-family:Poppins;background:#0f172a;color:white;margin:0;}
-.container{padding:20px;}
-.card{background:#1e293b;padding:20px;margin-top:20px;border-radius:10px;}
+body {
+    font-family: Poppins;
+    background: #0f172a;
+    color: white;
+    margin: 0;
+}
+
+.container {
+    padding: 20px;
+}
+
+.card {
+    background: #1e293b;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 10px;
+}
+
+button {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: #22c55e;
+    color: white;
+    cursor: pointer;
+}
 </style>
 </head>
 
@@ -21,12 +44,18 @@ body {font-family:Poppins;background:#0f172a;color:white;margin:0;}
 <a href="/profile">👤 Profile</a> |
 <a href="/logout">Logout</a>
 
+<!-- Search -->
 <form method="POST">
 <input name="city" placeholder="Enter city">
 <button>Search</button>
 </form>
 
+<br>
+
+<!-- 📍 Location Button (FIXED) -->
 <button type="button" onclick="getLocation()">📍 Use My Location</button>
+
+{% if error %}
 <p style="color:red">{{ error }}</p>
 {% endif %}
 
@@ -62,8 +91,10 @@ body {font-family:Poppins;background:#0f172a;color:white;margin:0;}
 </div>
 
 <script>
+
+// 🌍 FIXED LOCATION CODE
 function getLocation(){
-    console.log("Button clicked");   // debug
+    console.log("Button clicked");
 
     if (!navigator.geolocation){
         alert("Geolocation not supported");
@@ -75,12 +106,12 @@ function getLocation(){
             let lat = position.coords.latitude;
             let lon = position.coords.longitude;
 
-            console.log("Lat:", lat, "Lon:", lon);  // debug
+            console.log("Lat:", lat, "Lon:", lon);
 
             fetch(`/location?lat=${lat}&lon=${lon}`)
             .then(res => res.json())
             .then(data => {
-                console.log("Response:", data);  // debug
+                console.log("API Response:", data);
 
                 if(data.city){
                     document.querySelector("input[name='city']").value = data.city;
@@ -89,26 +120,32 @@ function getLocation(){
                 }
             })
             .catch(err => {
-                console.log("Fetch error:", err);
-                alert("Error getting city");
+                console.log("Error:", err);
+                alert("Error fetching location");
             });
         },
         function(error){
             console.log("Location error:", error);
-            alert("Permission denied or location error");
+            alert("Permission denied or error");
         }
     );
 }
-});
-});
-}
 
+// 📊 Chart
 {% if temps %}
-new Chart(document.getElementById("chart"),{
-type:'line',
-data:{labels:{{labels|tojson}},datasets:[{data:{{temps|tojson}}}]}
+new Chart(document.getElementById("chart"), {
+    type: 'line',
+    data: {
+        labels: {{ labels|tojson }},
+        datasets: [{
+            label: "Temperature",
+            data: {{ temps|tojson }},
+            borderWidth: 2
+        }]
+    }
 });
 {% endif %}
+
 </script>
 
 </body>
