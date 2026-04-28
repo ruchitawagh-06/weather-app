@@ -19,7 +19,6 @@ display:flex;
 margin:0;
 }
 
-/* Sidebar */
 .sidebar{
 width:220px;
 background:#020617;
@@ -27,7 +26,6 @@ padding:20px;
 }
 .sidebar a{display:block;margin:10px 0;color:white;text-decoration:none;}
 
-/* Main */
 .main{flex:1;padding:20px;}
 
 .card{
@@ -37,7 +35,6 @@ border-radius:15px;
 margin-top:20px;
 }
 
-/* Forecast */
 .forecast{
 display:flex;
 gap:10px;
@@ -51,11 +48,9 @@ width:100px;
 text-align:center;
 }
 
-/* Map */
 #map{height:300px;border-radius:10px;}
 .fullscreen-map{
-position:fixed;
-top:0;left:0;width:100%;height:100%;
+position:fixed;top:0;left:0;width:100%;height:100%;
 z-index:9999;
 }
 </style>
@@ -75,10 +70,11 @@ z-index:9999;
 <h1>Weather Pro</h1>
 
 <form method="POST">
-<input name="city">
+<input name="city" placeholder="Enter city">
 <button>Search</button>
 </form>
 
+<br>
 <button onclick="getLocation()">📍 Location</button>
 
 <!-- CURRENT WEATHER -->
@@ -112,7 +108,8 @@ z-index:9999;
 </div>
 {% endif %}
 
-<!-- MAP -->
+<!-- MAP (SHOW ONLY AFTER SEARCH) -->
+{% if weather %}
 <div class="card">
 <h3>🌍 Map</h3>
 
@@ -131,6 +128,7 @@ z-index:9999;
 
 <div id="map"></div>
 </div>
+{% endif %}
 
 </div>
 
@@ -154,7 +152,7 @@ L.marker([lat,lon]).addTo(map)
 .openPopup();
 }
 
-// MAP TYPE
+// BASE MAP
 function setMap(type){
 map.removeLayer(baseLayer);
 
@@ -195,14 +193,7 @@ overlayLayer=L.tileLayer(
 }
 }
 
-// CLOUD ANIMATION
-setInterval(()=>{
-if(overlayLayer){
-overlayLayer.setUrl(overlayLayer._url);
-}
-},5000);
-
-// LOCATION
+// LOCATION BUTTON
 function getLocation(){
 navigator.geolocation.getCurrentPosition(pos=>{
 let lat=pos.coords.latitude;
@@ -216,6 +207,12 @@ loadMap(lat,lon,`${d.temp}°C ${d.desc}`);
 });
 });
 }
+
+// AUTO LOAD MAP AFTER SEARCH
+{% if weather %}
+loadMap({{ weather.lat }}, {{ weather.lon }}, 
+"{{ weather.temp }}°C {{ weather.desc }}");
+{% endif %}
 
 // FULLSCREEN
 function toggleFullscreen(){
