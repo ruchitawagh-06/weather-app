@@ -1,183 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weather Dashboard</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-:root {
-    --bg: #0f172a;
-    --card: #1e293b;
-    --text: #ffffff;
-}
-
-.light {
-    --bg: #f1f5f9;
-    --card: #ffffff;
-    --text: #000000;
-}
-
-body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-}
-
-/* Sidebar */
-.sidebar {
-    width: 220px;
-    background: #111827;
-    height: 100vh;
-    padding: 20px;
-}
-
-.sidebar h2 {
-    color: #38bdf8;
-}
-
-.sidebar a {
-    display: block;
-    margin: 15px 0;
-    color: white;
-    text-decoration: none;
-}
-
-/* Main */
-.main {
-    flex: 1;
-    padding: 20px;
-}
-
-/* Navbar */
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* Toggle */
-.toggle {
-    cursor: pointer;
-    padding: 8px 12px;
-    background: #22c55e;
-    border-radius: 8px;
-}
-
-/* Search */
-.search {
-    margin-top: 20px;
-}
-
-input {
-    padding: 10px;
-    width: 300px;
-    border-radius: 8px;
-    border: none;
-}
-
-button {
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    background: #22c55e;
-    color: white;
-    cursor: pointer;
-}
-
-/* Cards */
-.card {
-    background: var(--card);
-    padding: 20px;
-    margin-top: 20px;
-    border-radius: 15px;
-}
-
-/* Grid */
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
-    gap: 20px;
-}
-
-/* Error */
-.error {
-    color: red;
-}
+body {font-family:Poppins;background:#0f172a;color:white;margin:0;}
+.container{padding:20px;}
+.card{background:#1e293b;padding:20px;margin-top:20px;border-radius:10px;}
 </style>
 </head>
 
 <body>
 
-<!-- Sidebar -->
-<div class="sidebar">
-    <h2>🌤 Weather</h2>
-    <a href="/">🏠 Dashboard</a>
-    <a href="/profile">👤 Profile</a>
-    <a href="/logout">🚪 Logout</a>
-</div>
+<div class="container">
 
-<!-- Main -->
-<div class="main">
+<h1>🌤 Weather App</h1>
 
-<div class="navbar">
-    <h1>Dashboard</h1>
-    <div class="toggle" onclick="toggleMode()">🌙 Toggle</div>
-</div>
+<a href="/profile">👤 Profile</a> |
+<a href="/logout">Logout</a>
 
-<!-- Search -->
-<form method="POST" class="search">
+<form method="POST">
 <input name="city" placeholder="Enter city">
 <button>Search</button>
 </form>
 
+<button onclick="getLocation()">📍 Use My Location</button>
+
 {% if error %}
-<p class="error">{{ error }}</p>
+<p style="color:red">{{ error }}</p>
 {% endif %}
 
-<!-- Weather Cards -->
 {% if weather %}
-<div class="grid">
-
-<div class="card">
-<h3>🌡 Temperature</h3>
-<p>{{ weather.temp }} °C</p>
-</div>
-
-<div class="card">
-<h3>💧 Humidity</h3>
-<p>{{ weather.humidity }}%</p>
-</div>
-
-<div class="card">
-<h3>☁ Condition</h3>
-<p>{{ weather.desc }}</p>
-</div>
-
-</div>
-
 <div class="card">
 <h2>{{ weather.city }}</h2>
-<p style="color:lightgreen">{{ advice }}</p>
+<p>{{ weather.temp }}°C</p>
+<p>{{ weather.desc }}</p>
+
+<a href="https://www.google.com/maps?q={{ weather.city }}" target="_blank">
+📍 Open Map
+</a>
+
+<p>{{ advice }}</p>
 </div>
 {% endif %}
 
-<!-- Forecast -->
 {% if forecast %}
 <div class="card">
-<h3>📅 5-Day Forecast</h3>
+<h3>Forecast</h3>
 {% for day in forecast %}
 <p>{{ day.temp }}°C - {{ day.desc }}</p>
 {% endfor %}
 </div>
 {% endif %}
 
-<!-- Chart -->
 {% if temps %}
 <div class="card">
 <canvas id="chart"></canvas>
@@ -187,22 +64,23 @@ button {
 </div>
 
 <script>
-function toggleMode(){
-    document.body.classList.toggle("light");
+function getLocation(){
+navigator.geolocation.getCurrentPosition(function(pos){
+let lat=pos.coords.latitude;
+let lon=pos.coords.longitude;
+
+fetch(`/location?lat=${lat}&lon=${lon}`)
+.then(res=>res.json())
+.then(data=>{
+document.querySelector("input[name='city']").value=data.city;
+});
+});
 }
 
-// Chart
 {% if temps %}
-new Chart(document.getElementById('chart'),{
+new Chart(document.getElementById("chart"),{
 type:'line',
-data:{
-labels: {{ labels|tojson }},
-datasets:[{
-label:'Temperature',
-data: {{ temps|tojson }},
-borderWidth:2
-}]
-}
+data:{labels:{{labels|tojson}},datasets:[{data:{{temps|tojson}}}]}
 });
 {% endif %}
 </script>
