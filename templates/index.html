@@ -7,6 +7,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<!-- MAP -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 
@@ -21,12 +25,12 @@ transition:1s;
 body.day{background:linear-gradient(135deg,#60a5fa,#38bdf8,#facc15);}
 body.night{background:linear-gradient(135deg,#020617,#0f172a,#1e293b);}
 
-/* 🔥 FIXED ANIMATION LAYERS */
+/* FIX ANIMATION LAYERS */
 #rain,#snow,#stars,#lightning,#moon{
 position:fixed;
 width:100%;
 height:100%;
-pointer-events:none;  /* IMPORTANT */
+pointer-events:none;
 z-index:0;
 }
 
@@ -55,7 +59,9 @@ backdrop-filter:blur(20px);
 border-radius:20px;
 padding:20px;
 margin-top:20px;
+transition:0.3s;
 }
+.card:hover{transform:translateY(-5px);}
 
 /* SEARCH */
 .search-box{display:flex;gap:10px;margin:15px 0;}
@@ -68,11 +74,9 @@ background:rgba(255,255,255,0.1);color:white;
 button{
 padding:10px;border-radius:10px;border:none;
 background:#22c55e;color:white;cursor:pointer;
+transition:0.3s;
 }
-
-/* WEATHER */
-.weather-main{display:flex;align-items:center;gap:20px;}
-.icon{font-size:50px;}
+button:hover{transform:scale(1.05);}
 
 /* FORECAST */
 .forecast{display:flex;gap:10px;flex-wrap:wrap;}
@@ -81,57 +85,34 @@ background:rgba(255,255,255,0.08);
 padding:10px;border-radius:10px;width:100px;text-align:center;
 }
 
-/* 🌧️ RAIN */
-.drop{
-position:absolute;width:2px;height:15px;background:white;
-animation:rain 0.5s linear infinite;
-}
-@keyframes rain{to{transform:translateY(100vh);}}
+/* MAP */
+#map{height:300px;border-radius:10px;margin-top:10px;}
 
-/* ❄️ SNOW */
-.snowflake{
-position:absolute;color:white;font-size:10px;
-animation:fall linear infinite;
+.map-controls{
+display:flex;
+gap:8px;
+flex-wrap:wrap;
+margin-bottom:10px;
 }
-@keyframes fall{to{transform:translateY(100vh);}}
 
-/* 🌙 MOON */
-#moon{
-width:70px;height:70px;border-radius:50%;
-background:white;top:10%;right:10%;opacity:0;
+/* MOBILE */
+@media(max-width:768px){
+.sidebar{display:none;}
+.main{padding:15px;}
+.search-box{flex-direction:column;}
+#map{height:250px;}
+.fcard{width:80px;font-size:12px;}
 }
-body.night #moon{opacity:1;}
-
-/* ✨ STARS */
-.star{
-position:absolute;width:2px;height:2px;background:white;
-animation:twinkle 2s infinite alternate;
-}
-@keyframes twinkle{from{opacity:0.2;}to{opacity:1;}}
-
-/* ⚡ LIGHTNING */
-#lightning{background:white;opacity:0;}
-.flash{animation:flash 0.3s;}
-@keyframes flash{50%{opacity:0.8;}}
 
 </style>
 </head>
 
 <body class="day">
 
-<!-- ANIMATIONS -->
-<div id="rain"></div>
-<div id="snow"></div>
-<div id="stars"></div>
-<div id="moon"></div>
-<div id="lightning"></div>
-
-<!-- SIDEBAR -->
 <div class="sidebar">
 <h2>🌤 Weather</h2>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
 <h1>Weather Pro</h1>
@@ -141,26 +122,14 @@ animation:twinkle 2s infinite alternate;
 <button>Search</button>
 </form>
 
+<button onclick="getLocation()">📍 Use Location</button>
+
 <!-- WEATHER -->
 {% if weather %}
 <div class="card">
 <h2>{{ weather.city }}</h2>
-
-<div class="weather-main">
-<div class="icon">
-{% if "cloud" in weather.desc %}☁️
-{% elif "rain" in weather.desc %}🌧️
-{% elif "snow" in weather.desc %}❄️
-{% elif "clear" in weather.desc %}☀️
-{% else %}🌤️
-{% endif %}
-</div>
-
-<div>
 <h1>{{ weather.temp }}°C</h1>
 <p>{{ weather.desc }}</p>
-</div>
-</div>
 </div>
 {% endif %}
 
@@ -186,102 +155,121 @@ animation:twinkle 2s infinite alternate;
 </div>
 {% endif %}
 
+<!-- MAP -->
+{% if weather %}
+<div class="card">
+<h3>🌍 Map</h3>
+
+<div class="map-controls">
+<button onclick="setMap('normal')">🗺️ Normal</button>
+<button onclick="setMap('satellite')">🛰️ Satellite</button>
+<button onclick="setLayer('rain')">🌧️ Rain</button>
+<button onclick="clearLayer()">❌ Clear</button>
+</div>
+
+<div id="map"></div>
+</div>
+{% endif %}
+
 </div>
 
 <script>
 
+let map, baseLayer, overlayLayer;
+
+// LOAD MAP
+function loadMap(lat,lon,text=""){
+if(map){map.remove();}
+
+map=L.map('map').setView([lat,lon],10);
+
+baseLayer=L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+).addTo(map);
+
+L.marker([lat,lon]).addTo(map)
+.bindPopup(text)
+.openPopup();
+}
+
+// SWITCH MAP
+function setMap(type){
+if(!map) return;
+
+map.removeLayer(baseLayer);
+
+if(type==="satellite"){
+baseLayer=L.tileLayer(
+'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+).addTo(map);
+}else{
+baseLayer=L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+).addTo(map);
+}
+}
+
+// RAIN LAYER
+function setLayer(type){
+if(!map) return;
+
+if(overlayLayer){
+map.removeLayer(overlayLayer);
+}
+
+if(type==="rain"){
+overlayLayer=L.tileLayer(
+`https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid={{ api_key }}`
+).addTo(map);
+}
+}
+
+// CLEAR LAYER
+function clearLayer(){
+if(overlayLayer){
+map.removeLayer(overlayLayer);
+}
+}
+
+// LOCATION
+function getLocation(){
+navigator.geolocation.getCurrentPosition(pos=>{
+let lat=pos.coords.latitude;
+let lon=pos.coords.longitude;
+
+fetch(`/location?lat=${lat}&lon=${lon}`)
+.then(r=>r.json())
+.then(d=>{
+document.querySelector("input[name='city']").value=d.city;
+loadMap(lat,lon,`${d.temp}°C ${d.desc}`);
+});
+});
+}
+
+// AUTO LOAD MAP
+{% if weather %}
+loadMap({{ weather.lat }}, {{ weather.lon }},
+"{{ weather.temp }}°C {{ weather.desc }}");
+{% endif %}
+
 // DAY/NIGHT
 function setDayNight(){
 const hour=new Date().getHours();
-document.body.className = (hour>=6 && hour<18) ? "day":"night";
+document.body.className=(hour>=6 && hour<18)?"day":"night";
 }
-
-// RAIN
-function startRain(){
-const rain=document.getElementById("rain");
-rain.innerHTML="";
-for(let i=0;i<80;i++){
-let d=document.createElement("div");
-d.className="drop";
-d.style.left=Math.random()*100+"vw";
-rain.appendChild(d);
-}
-}
-
-// SNOW
-function startSnow(){
-const snow=document.getElementById("snow");
-snow.innerHTML="";
-for(let i=0;i<50;i++){
-let f=document.createElement("div");
-f.className="snowflake";
-f.innerHTML="❄";
-f.style.left=Math.random()*100+"vw";
-f.style.animationDuration=(3+Math.random()*5)+"s";
-snow.appendChild(f);
-}
-}
-
-// LIGHTNING
-let lightningStarted=false;
-function startLightning(){
-if(lightningStarted) return;
-lightningStarted=true;
-
-setInterval(()=>{
-if(Math.random()>0.85){
-let l=document.getElementById("lightning");
-l.classList.add("flash");
-setTimeout(()=>l.classList.remove("flash"),200);
-}
-},4000);
-}
-
-// STARS
-function createStars(){
-const s=document.getElementById("stars");
-s.innerHTML="";
-for(let i=0;i<100;i++){
-let star=document.createElement("div");
-star.className="star";
-star.style.left=Math.random()*100+"vw";
-star.style.top=Math.random()*100+"vh";
-s.appendChild(star);
-}
-}
-
-// WEATHER APPLY
-function applyWeather(desc){
-desc=desc.toLowerCase();
-
-document.getElementById("rain").innerHTML="";
-document.getElementById("snow").innerHTML="";
-
-if(desc.includes("rain")){
-startRain();
-startLightning();
-}
-if(desc.includes("snow")){
-startSnow();
-}
-}
-
-// INIT
 setDayNight();
-
-{% if weather %}
-applyWeather("{{ weather.desc }}");
-{% endif %}
-
-if(document.body.classList.contains("night")){
-createStars();
-}
 
 // CHART
 {% if temps %}
 new Chart(document.getElementById("chart"),{
 type:'line',
-data:{labels:{{labels|tojson}},datasets:[{data:{{temps|tojson}},borderColor:"cyan"}]}
+data:{
+labels:{{labels|tojson}},
+datasets:[{
+data:{{temps|tojson}},
+borderColor:"cyan"
+}]
+}
 });
 {% endif %}
 
