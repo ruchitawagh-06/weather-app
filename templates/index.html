@@ -22,11 +22,15 @@ body{
 .sidebar{
     width:220px;
     height:100vh;
-    background:#020617;
+    background:rgba(0,0,0,0.4);
+    backdrop-filter:blur(15px);
     padding:20px;
 }
 
-.sidebar h2{color:#38bdf8;}
+.sidebar h2{
+    color:#38bdf8;
+    margin-bottom:20px;
+}
 
 .sidebar a{
     display:block;
@@ -36,7 +40,21 @@ body{
 }
 
 /* Main */
-.main{flex:1;padding:20px;}
+.main{
+    flex:1;
+    padding:20px;
+}
+
+/* Glass card */
+.card{
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.1);
+    padding:20px;
+    margin-top:20px;
+    border-radius:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.3);
+}
 
 /* Search */
 .search{
@@ -46,91 +64,113 @@ body{
 }
 
 input{
-    padding:10px;
-    border-radius:8px;
+    padding:12px;
+    border-radius:10px;
     border:none;
+    width:250px;
 }
 
 button{
-    padding:10px;
-    border-radius:8px;
+    padding:12px;
+    border-radius:10px;
     border:none;
     background:#22c55e;
     color:white;
     cursor:pointer;
 }
 
-/* Card */
-.card{
-    background:rgba(255,255,255,0.08);
-    padding:20px;
-    margin-top:20px;
-    border-radius:15px;
-}
-
 /* Loader */
-.loader{
-    display:none;
-    margin-top:20px;
-}
+.loader{display:none;margin-top:20px;}
 
 .spinner{
-    width:40px;
-    height:40px;
+    width:40px;height:40px;
     border:4px solid #ccc;
     border-top:4px solid #22c55e;
     border-radius:50%;
     animation:spin 1s linear infinite;
 }
 
-@keyframes spin{
-    100%{transform:rotate(360deg);}
+@keyframes spin{100%{transform:rotate(360deg);}}
+
+/* Forecast */
+.forecast-container{
+    margin-top:30px;
+}
+
+.forecast-row{
+    display:flex;
+    gap:20px;
+    margin-top:20px;
+    flex-wrap:wrap;
+}
+
+.forecast-card{
+    background:rgba(255,255,255,0.1);
+    backdrop-filter:blur(10px);
+    padding:20px;
+    border-radius:15px;
+    width:140px;
+    text-align:center;
+    transition:0.3s;
+}
+
+.forecast-card:hover{
+    transform:translateY(-5px) scale(1.05);
+}
+
+.icon{
+    font-size:28px;
+}
+
+.day{
+    font-weight:600;
+    margin-bottom:5px;
+}
+
+.temp{
+    font-size:18px;
+    font-weight:600;
 }
 
 /* Responsive */
 @media(max-width:768px){
     body{flex-direction:column;}
-    .sidebar{width:100%;display:flex;justify-content:space-around;}
+    .sidebar{
+        width:100%;
+        height:auto;
+        display:flex;
+        justify-content:space-around;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<!-- Sidebar -->
 <div class="sidebar">
-    <h2>🌤 Weather</h2>
-    <a href="/">🏠 Dashboard</a>
-    <a href="/profile">👤 Profile</a>
-    <a href="/logout">🚪 Logout</a>
+<h2>🌤 Weather</h2>
+<a href="/">🏠 Dashboard</a>
+<a href="/profile">👤 Profile</a>
+<a href="/logout">🚪 Logout</a>
 </div>
 
-<!-- Main -->
 <div class="main">
 
 <h1>Weather Pro</h1>
 
-<!-- Search -->
 <form method="POST" class="search" onsubmit="showLoader()">
 <input name="city" placeholder="Enter city">
 <button>Search</button>
 </form>
 
 <br>
-
 <button type="button" onclick="getLocation()">📍 Use My Location</button>
 
-<!-- Loader -->
 <div class="loader" id="loader">
 <div class="spinner"></div>
-<p>Loading weather...</p>
+<p>Loading...</p>
 </div>
 
-{% if error %}
-<p style="color:red">{{ error }}</p>
-{% endif %}
-
-<!-- Weather -->
 {% if weather %}
 <div class="card">
 <h2>{{ weather.city }}</h2>
@@ -145,13 +185,36 @@ button{
 </div>
 {% endif %}
 
-<!-- Forecast -->
+<!-- 🌟 PREMIUM FORECAST -->
 {% if forecast %}
-<div class="card">
-<h3>Forecast</h3>
+<div class="forecast-container">
+
+<h3>📅 5-Day Forecast</h3>
+
+<div class="forecast-row">
 {% for day in forecast %}
-<p>{{ day.temp }}°C - {{ day.desc }}</p>
+
+{% set day_names = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"] %}
+
+<div class="forecast-card">
+
+<div class="day">{{ day_names[loop.index0 % 7] }}</div>
+
+<div class="icon">
+{% if "cloud" in day.desc %}☁️
+{% elif "rain" in day.desc %}🌧️
+{% elif "clear" in day.desc %}☀️
+{% else %}🌤️
+{% endif %}
+</div>
+
+<p class="temp">{{ day.temp }}°C</p>
+<p>{{ day.desc }}</p>
+
+</div>
 {% endfor %}
+</div>
+
 </div>
 {% endif %}
 
@@ -161,16 +224,6 @@ button{
 <canvas id="chart"></canvas>
 </div>
 {% endif %}
-
-<!-- 🤖 Chatbot -->
-<div class="card">
-<h3>🤖 Weather Assistant</h3>
-
-<input id="chatInput" placeholder="Ask something...">
-<button onclick="askAI()">Ask</button>
-
-<p id="chatResponse"></p>
-</div>
 
 </div>
 
@@ -192,21 +245,6 @@ fetch(`/location?lat=${lat}&lon=${lon}`)
 .then(data=>{
 document.querySelector("input[name='city']").value=data.city;
 });
-});
-}
-
-// Chatbot
-function askAI(){
-let question=document.getElementById("chatInput").value;
-
-fetch("/chat",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({msg:question})
-})
-.then(res=>res.json())
-.then(data=>{
-document.getElementById("chatResponse").innerText=data.reply;
 });
 }
 
