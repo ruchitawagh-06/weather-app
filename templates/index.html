@@ -9,120 +9,95 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-* {margin:0; padding:0; box-sizing:border-box;}
+*{margin:0;padding:0;box-sizing:border-box;}
 
-body {
-    font-family: 'Poppins', sans-serif;
-    display: flex;
-    background: linear-gradient(135deg,#0f172a,#1e293b);
-    color: white;
+body{
+    font-family:'Poppins',sans-serif;
+    display:flex;
+    background:linear-gradient(135deg,#0f172a,#1e293b);
+    color:white;
 }
 
-/* 🌟 Sidebar */
-.sidebar {
-    width: 220px;
-    height: 100vh;
-    background: #020617;
-    padding: 20px;
+/* Sidebar */
+.sidebar{
+    width:220px;
+    height:100vh;
+    background:#020617;
+    padding:20px;
 }
 
-.sidebar h2 {
-    color: #38bdf8;
-    margin-bottom: 20px;
+.sidebar h2{color:#38bdf8;}
+
+.sidebar a{
+    display:block;
+    margin:15px 0;
+    color:white;
+    text-decoration:none;
 }
 
-.sidebar a {
-    display: block;
-    margin: 15px 0;
-    color: white;
-    text-decoration: none;
-    transition: 0.3s;
-}
-
-.sidebar a:hover {
-    color: #22c55e;
-}
-
-/* 📱 Main */
-.main {
-    flex: 1;
-    padding: 20px;
-}
-
-/* Navbar */
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+/* Main */
+.main{flex:1;padding:20px;}
 
 /* Search */
-.search {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
+.search{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
 }
 
-input {
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    width: 250px;
+input{
+    padding:10px;
+    border-radius:8px;
+    border:none;
 }
 
-button {
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    background: #22c55e;
-    color: white;
-    cursor: pointer;
+button{
+    padding:10px;
+    border-radius:8px;
+    border:none;
+    background:#22c55e;
+    color:white;
+    cursor:pointer;
 }
 
-/* 🌟 Cards */
-.card {
-    background: rgba(255,255,255,0.08);
-    padding: 20px;
-    margin-top: 20px;
-    border-radius: 20px;
-    backdrop-filter: blur(10px);
+/* Card */
+.card{
+    background:rgba(255,255,255,0.08);
+    padding:20px;
+    margin-top:20px;
+    border-radius:15px;
 }
 
-/* Weather grid */
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
-    gap: 20px;
+/* Loader */
+.loader{
+    display:none;
+    margin-top:20px;
 }
 
-/* 🌤 Animation */
-.icon {
-    font-size: 40px;
-    animation: float 2s infinite ease-in-out;
+.spinner{
+    width:40px;
+    height:40px;
+    border:4px solid #ccc;
+    border-top:4px solid #22c55e;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
 }
 
-@keyframes float {
-    0%,100% {transform: translateY(0);}
-    50% {transform: translateY(-8px);}
+@keyframes spin{
+    100%{transform:rotate(360deg);}
 }
 
-/* 📱 Responsive */
+/* Responsive */
 @media(max-width:768px){
-    body {flex-direction: column;}
-    .sidebar {
-        width: 100%;
-        height: auto;
-        display: flex;
-        justify-content: space-around;
-    }
-    .main {padding: 10px;}
+    body{flex-direction:column;}
+    .sidebar{width:100%;display:flex;justify-content:space-around;}
 }
 </style>
 </head>
 
 <body>
 
-<!-- 🌟 Sidebar -->
+<!-- Sidebar -->
 <div class="sidebar">
     <h2>🌤 Weather</h2>
     <a href="/">🏠 Dashboard</a>
@@ -130,44 +105,36 @@ button {
     <a href="/logout">🚪 Logout</a>
 </div>
 
-<!-- 📱 Main -->
+<!-- Main -->
 <div class="main">
 
-<div class="navbar">
 <h1>Weather Pro</h1>
-</div>
 
-<!-- 🔍 Search -->
-<form method="POST" class="search">
+<!-- Search -->
+<form method="POST" class="search" onsubmit="showLoader()">
 <input name="city" placeholder="Enter city">
 <button>Search</button>
 </form>
 
 <br>
 
-<!-- 📍 Location -->
 <button type="button" onclick="getLocation()">📍 Use My Location</button>
+
+<!-- Loader -->
+<div class="loader" id="loader">
+<div class="spinner"></div>
+<p>Loading weather...</p>
+</div>
 
 {% if error %}
 <p style="color:red">{{ error }}</p>
 {% endif %}
 
-<!-- 🌤 Weather -->
+<!-- Weather -->
 {% if weather %}
 <div class="card">
-
 <h2>{{ weather.city }}</h2>
-
-<div class="icon">
-{% if "cloud" in weather.desc %}☁️
-{% elif "rain" in weather.desc %}🌧️
-{% elif "clear" in weather.desc %}☀️
-{% else %}🌤️
-{% endif %}
-</div>
-
 <p>🌡 {{ weather.temp }}°C</p>
-<p>💧 {{ weather.humidity }}%</p>
 <p>{{ weather.desc }}</p>
 
 <a href="https://www.google.com/maps?q={{ weather.city }}" target="_blank">
@@ -175,63 +142,81 @@ button {
 </a>
 
 <p style="color:#4ade80">{{ advice }}</p>
-
 </div>
 {% endif %}
 
-<!-- 📅 Forecast -->
+<!-- Forecast -->
 {% if forecast %}
 <div class="card">
-<h3>📅 Forecast</h3>
-
-<div class="grid">
+<h3>Forecast</h3>
 {% for day in forecast %}
-<div class="card">
-<p>{{ day.temp }}°C</p>
-<p>{{ day.desc }}</p>
-</div>
+<p>{{ day.temp }}°C - {{ day.desc }}</p>
 {% endfor %}
-</div>
-
 </div>
 {% endif %}
 
-<!-- 📊 Chart -->
+<!-- Chart -->
 {% if temps %}
 <div class="card">
 <canvas id="chart"></canvas>
 </div>
 {% endif %}
 
+<!-- 🤖 Chatbot -->
+<div class="card">
+<h3>🤖 Weather Assistant</h3>
+
+<input id="chatInput" placeholder="Ask something...">
+<button onclick="askAI()">Ask</button>
+
+<p id="chatResponse"></p>
+</div>
+
 </div>
 
 <script>
 
-// 🌍 LOCATION
-function getLocation(){
-    navigator.geolocation.getCurrentPosition(function(pos){
-        let lat = pos.coords.latitude;
-        let lon = pos.coords.longitude;
-
-        fetch(`/location?lat=${lat}&lon=${lon}`)
-        .then(res => res.json())
-        .then(data => {
-            document.querySelector("input[name='city']").value = data.city;
-        });
-    });
+// Loader
+function showLoader(){
+document.getElementById("loader").style.display="block";
 }
 
-// 📊 Chart
+// Location
+function getLocation(){
+navigator.geolocation.getCurrentPosition(function(pos){
+let lat=pos.coords.latitude;
+let lon=pos.coords.longitude;
+
+fetch(`/location?lat=${lat}&lon=${lon}`)
+.then(res=>res.json())
+.then(data=>{
+document.querySelector("input[name='city']").value=data.city;
+});
+});
+}
+
+// Chatbot
+function askAI(){
+let question=document.getElementById("chatInput").value;
+
+fetch("/chat",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({msg:question})
+})
+.then(res=>res.json())
+.then(data=>{
+document.getElementById("chatResponse").innerText=data.reply;
+});
+}
+
+// Chart
 {% if temps %}
 new Chart(document.getElementById("chart"),{
 type:'line',
 data:{
-labels: {{ labels|tojson }},
-datasets:[{
-label:'Temperature',
-data: {{ temps|tojson }},
-borderWidth:2
-}]
+labels:{{labels|tojson}},
+datasets:[{label:"Temp",data:{{temps|tojson}}}]
 }
 });
 {% endif %}
