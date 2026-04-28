@@ -1,57 +1,178 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weather Pro</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{font-family:Poppins;background:#0f172a;color:white;}
-.card{background:#1e293b;padding:20px;margin:20px;border-radius:10px;}
-button{padding:10px;background:#22c55e;color:white;border:none;}
-#map{height:300px;border-radius:10px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+    font-family:'Poppins',sans-serif;
+    display:flex;
+    background:linear-gradient(135deg,#0f172a,#1e293b);
+    color:white;
+}
+
+/* Sidebar */
+.sidebar{
+    width:220px;
+    height:100vh;
+    background:rgba(0,0,0,0.4);
+    backdrop-filter:blur(15px);
+    padding:20px;
+}
+
+.sidebar h2{color:#38bdf8;}
+
+.sidebar a{
+    display:block;
+    margin:15px 0;
+    color:white;
+    text-decoration:none;
+}
+
+/* Main */
+.main{flex:1;padding:20px;}
+
+.card{
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(15px);
+    border-radius:20px;
+    padding:20px;
+    margin-top:20px;
+}
+
+/* Search */
+.search{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+}
+
+input{
+    padding:12px;
+    border-radius:10px;
+    border:none;
+}
+
+button{
+    padding:12px;
+    border-radius:10px;
+    border:none;
+    background:#22c55e;
+    color:white;
+    cursor:pointer;
+}
+
+/* Forecast */
+.forecast-row{
+    display:flex;
+    gap:15px;
+    margin-top:20px;
+    flex-wrap:wrap;
+}
+
+.forecast-card{
+    background:rgba(255,255,255,0.1);
+    padding:15px;
+    border-radius:15px;
+    width:130px;
+    text-align:center;
+}
+
+/* Map */
+#map{
+    height:250px;
+    border-radius:15px;
+    margin-top:20px;
+}
+
+/* Mobile */
+@media(max-width:768px){
+    body{flex-direction:column;}
+    .sidebar{
+        width:100%;
+        display:flex;
+        justify-content:space-around;
+    }
+}
 </style>
 </head>
 
 <body>
 
+<div class="sidebar">
+<h2>🌤 Weather</h2>
+<a href="/">🏠 Dashboard</a>
+<a href="/profile">👤 Profile</a>
+<a href="/logout">🚪 Logout</a>
+<button onclick="toggleTheme()">🌙 Theme</button>
+</div>
+
+<div class="main">
+
 <h1>Weather Pro</h1>
 
-<form method="POST">
-<input name="city">
+<form method="POST" class="search">
+<input name="city" placeholder="Enter city">
 <button>Search</button>
 </form>
 
-<button onclick="getLocation()">📍 Location</button>
-<button onclick="toggleTheme()">🌙 Theme</button>
+<br>
+
+<button onclick="getLocation()">📍 Use Location</button>
 <button onclick="enableNotifications()">🔔 Notify</button>
 
-<div id="map"></div>
-
+<!-- WEATHER -->
 {% if weather %}
 <div class="card">
 <h2>{{ weather.city }}</h2>
-<p>{{ weather.temp }}°C</p>
+<p>🌡 {{ weather.temp }}°C</p>
 <p>{{ weather.desc }}</p>
 </div>
 {% endif %}
 
+<!-- FORECAST -->
 {% if forecast %}
 <div class="card">
+<h3>📅 Forecast</h3>
+
+<div class="forecast-row">
 {% for d in forecast %}
-<p>{{ d.temp }}°C - {{ d.desc }}</p>
+<div class="forecast-card">
+<p>{{ d.temp }}°C</p>
+<p>{{ d.desc }}</p>
+</div>
 {% endfor %}
+</div>
 </div>
 {% endif %}
 
-<canvas id="chart"></canvas>
+<!-- MAP -->
+<div id="map"></div>
 
+<!-- CHART -->
+{% if temps %}
 <div class="card">
+<canvas id="chart"></canvas>
+</div>
+{% endif %}
+
+<!-- AI -->
+<div class="card">
+<h3>🤖 Assistant</h3>
 <input id="chatInput">
 <button onclick="askAI()">Ask</button>
 <p id="chatResponse"></p>
+</div>
+
 </div>
 
 <script>
@@ -99,6 +220,14 @@ new Notification("Weather Pro Ready 🔔");
 }
 });
 }
+
+// CHART
+{% if temps %}
+new Chart(document.getElementById("chart"),{
+type:'line',
+data:{labels:{{labels|tojson}},datasets:[{data:{{temps|tojson}}}]}
+});
+{% endif %}
 
 </script>
 
