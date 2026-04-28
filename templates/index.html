@@ -12,9 +12,125 @@
 
 <style>
 
-/* ===== YOUR EXISTING CSS (UNCHANGED) ===== */
+/* RESET */
+*{margin:0;padding:0;box-sizing:border-box;}
 
-/* ✅ NEW: WIND CANVAS */
+body{
+font-family:'Poppins',sans-serif;
+display:flex;
+min-height:100vh;
+color:white;
+background: linear-gradient(135deg,#0f172a,#1e293b,#1e3a8a,#0ea5e9);
+background-size:300% 300%;
+animation: gradientMove 10s ease infinite;
+}
+
+@keyframes gradientMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+/* SIDEBAR */
+.sidebar{
+width:220px;
+background:rgba(0,0,0,0.4);
+backdrop-filter:blur(20px);
+padding:20px;
+}
+
+/* MAIN */
+.main{
+flex:1;
+padding:30px;
+}
+
+/* SEARCH */
+.search-box{
+display:flex;
+gap:10px;
+margin-bottom:10px;
+}
+
+.search-box input{
+flex:1;
+padding:12px;
+border-radius:12px;
+border:none;
+background:rgba(255,255,255,0.1);
+color:white;
+}
+
+/* BUTTON */
+button{
+padding:10px 16px;
+border-radius:12px;
+border:none;
+background:linear-gradient(135deg,#22c55e,#16a34a);
+color:white;
+cursor:pointer;
+transition:0.3s;
+}
+
+button:hover{
+transform:translateY(-2px);
+}
+
+/* CARD */
+.card{
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(20px);
+border-radius:20px;
+padding:20px;
+margin-top:20px;
+border:1px solid rgba(255,255,255,0.15);
+box-shadow:0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* WEATHER */
+.weather-main{
+display:flex;
+align-items:center;
+gap:20px;
+}
+
+.icon{font-size:60px;}
+.temp{font-size:48px;font-weight:600;}
+.desc{opacity:0.8;}
+
+/* FORECAST */
+.forecast{display:flex;gap:10px;flex-wrap:wrap;}
+.fcard{
+background:rgba(255,255,255,0.08);
+padding:12px;
+border-radius:12px;
+width:100px;
+text-align:center;
+}
+
+/* MAP */
+#map{height:300px;border-radius:12px;margin-top:10px;}
+.map-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+
+/* LOADER */
+.skeleton{animation:pulse 1.5s infinite;}
+.skeleton-line{
+height:15px;
+background:rgba(255,255,255,0.2);
+margin:10px 0;
+border-radius:5px;
+}
+@keyframes pulse{
+0%{opacity:0.5;}
+50%{opacity:1;}
+100%{opacity:0.5;}
+}
+
+/* TIMELINE */
+#timeline{width:100%;margin-top:10px;}
+#timeLabel{margin-top:8px;opacity:0.8;}
+
+/* WIND CANVAS */
 #windCanvas{
 position:fixed;
 top:0;
@@ -26,15 +142,21 @@ z-index:1;
 opacity:0.4;
 }
 
-/* ✅ NEW: TIMELINE */
-#timeline{width:100%;margin-top:10px;}
-#timeLabel{margin-top:8px;font-size:14px;opacity:0.8;}
+/* LAYER FIX */
+#rain,#snow,#stars,#lightning,#moon{
+position:fixed;
+width:100%;
+height:100%;
+pointer-events:none;
+z-index:0;
+}
 
-/* ✅ NEW: WIND ARROWS */
-.wind-arrow{
-font-size:18px;
-color:white;
-text-shadow:0 0 5px black;
+/* MOBILE */
+@media(max-width:768px){
+.sidebar{display:none;}
+.main{padding:15px;}
+.search-box{flex-direction:column;}
+.fcard{width:80px;}
 }
 
 </style>
@@ -42,14 +164,11 @@ text-shadow:0 0 5px black;
 
 <body>
 
-<!-- EXISTING ANIMATION LAYERS -->
 <div id="rain"></div>
 <div id="snow"></div>
 <div id="stars"></div>
 <div id="moon"></div>
 <div id="lightning"></div>
-
-<!-- ✅ NEW: WIND PARTICLES -->
 <canvas id="windCanvas"></canvas>
 
 <div class="sidebar">
@@ -67,16 +186,35 @@ text-shadow:0 0 5px black;
 
 <button onclick="getLocation()">📍 Use Location</button>
 
-<!-- WEATHER -->
+<!-- LOADER -->
+<div id="loader" class="card skeleton" style="display:none;">
+<div class="skeleton-line"></div>
+<div class="skeleton-line"></div>
+<div class="skeleton-line"></div>
+</div>
+
 {% if weather %}
 <div class="card">
 <h2>{{ weather.city }}</h2>
-<h1>{{ weather.temp }}°C</h1>
-<p>{{ weather.desc }}</p>
+
+<div class="weather-main">
+<div class="icon">
+{% if "cloud" in weather.desc %}☁️
+{% elif "rain" in weather.desc %}🌧️
+{% elif "snow" in weather.desc %}❄️
+{% elif "clear" in weather.desc %}☀️
+{% else %}🌤️
+{% endif %}
+</div>
+
+<div>
+<h1 class="temp">{{ weather.temp }}°</h1>
+<p class="desc">{{ weather.desc }}</p>
+</div>
+</div>
 </div>
 {% endif %}
 
-<!-- FORECAST -->
 {% if forecast %}
 <div class="card">
 <h3>Forecast</h3>
@@ -91,26 +229,19 @@ text-shadow:0 0 5px black;
 </div>
 {% endif %}
 
-<!-- CHART -->
 {% if temps %}
 <div class="card">
 <canvas id="chart"></canvas>
 </div>
-{% endif %}
 
-<!-- ✅ NEW: TIMELINE (SAFE ADD) -->
-{% if temps %}
 <div class="card">
-<h3>⏳ Weather Timeline</h3>
-
+<h3>⏳ Timeline</h3>
 <input type="range" min="0" max="4" value="0" id="timeline">
 <p id="timeLabel">Now</p>
-
 <button onclick="playTimeline()">▶ Play</button>
 </div>
 {% endif %}
 
-<!-- MAP -->
 {% if weather %}
 <div class="card">
 <h3>🌍 Map</h3>
@@ -121,7 +252,6 @@ text-shadow:0 0 5px black;
 <button onclick="setLayer('rain')">🌧️</button>
 <button onclick="setLayer('wind')">🌪️</button>
 <button onclick="setLayer('temp')">🔥</button>
-<button onclick="toggleFullscreen()">🖥️</button>
 </div>
 
 <div id="map"></div>
@@ -132,200 +262,40 @@ text-shadow:0 0 5px black;
 
 <script>
 
-/* ===== YOUR EXISTING JS (UNCHANGED) ===== */
-
-
-/* =========================
-   🌪️ WIND PARTICLES
-========================= */
-let windActive=false;
-
-function startWind(){
-
-if(windActive) return;
-windActive=true;
-
-const canvas=document.getElementById("windCanvas");
-const ctx=canvas.getContext("2d");
-
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-
-let particles=[];
-
-for(let i=0;i<80;i++){
-particles.push({
-x:Math.random()*canvas.width,
-y:Math.random()*canvas.height,
-speed:1+Math.random()*2
-});
-}
-
-function draw(){
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
-ctx.strokeStyle="rgba(255,255,255,0.4)";
-
-particles.forEach(p=>{
-ctx.beginPath();
-ctx.moveTo(p.x,p.y);
-ctx.lineTo(p.x+12,p.y);
-ctx.stroke();
-
-p.x+=p.speed;
-
-if(p.x>canvas.width){
-p.x=0;
-p.y=Math.random()*canvas.height;
-}
+// LOADER
+document.querySelector("form").addEventListener("submit",()=>{
+document.getElementById("loader").style.display="block";
 });
 
-requestAnimationFrame(draw);
-}
-
-draw();
-}
-
-
-/* =========================
-   🌪️ WIND ARROWS
-========================= */
-function drawWindArrows(lat,lon){
-
-if(!map) return;
-
-for(let i=0;i<8;i++){
-
-let offsetLat = lat + (Math.random()-0.5)*0.3;
-let offsetLon = lon + (Math.random()-0.5)*0.3;
-
-let angle = Math.random()*360;
-
-let icon = L.divIcon({
-className:"wind-arrow",
-html:"➤",
-iconSize:[20,20]
+// CHART
+{% if temps %}
+new Chart(document.getElementById("chart"),{
+type:'line',
+data:{labels:{{labels|tojson}},datasets:[{data:{{temps|tojson}},borderColor:"cyan"}]}
 });
+{% endif %}
 
-let marker=L.marker([offsetLat,offsetLon],{icon}).addTo(map);
-
-marker.getElement().style.transform += ` rotate(${angle}deg)`;
-
-}
-}
-
-
-/* =========================
-   ⏳ TIMELINE SYNC
-========================= */
+// TIMELINE
 const times=["Now","+6h","+12h","+18h","+24h"];
-
 const slider=document.getElementById("timeline");
 
 if(slider){
 slider.addEventListener("input",function(){
-
 let i=this.value;
 document.getElementById("timeLabel").innerText=times[i];
-
-// 🔥 UPDATE MAP LAYER
-if(map && overlayLayer && currentLayerType){
-overlayLayer.setUrl(
-`https://tile.openweathermap.org/map/${currentLayerType}_new/{z}/{x}/{y}.png?appid={{ api_key }}&t=${i}`
-);
-}
-
 });
 }
 
-
-/* =========================
-   ▶️ PLAYBACK
-========================= */
-let playing=false;
-
+// PLAY
 function playTimeline(){
-
-if(playing) return;
-playing=true;
-
 let i=0;
-
 let interval=setInterval(()=>{
-
 document.getElementById("timeline").value=i;
 document.getElementById("timeline").dispatchEvent(new Event("input"));
-
 i++;
-
-if(i>4){
-clearInterval(interval);
-playing=false;
-}
-
+if(i>4) clearInterval(interval);
 },1500);
-
 }
-
-
-/* =========================
-   🌍 TRACK LAYER TYPE
-========================= */
-let currentLayerType=null;
-
-function setLayer(type){
-
-currentLayerType=type;
-
-if(overlayLayer){
-map.removeLayer(overlayLayer);
-}
-
-overlayLayer=L.tileLayer(
-`https://tile.openweathermap.org/map/${type}_new/{z}/{x}/{y}.png?appid={{ api_key }}`
-).addTo(map);
-}
-
-
-/* =========================
-   MODIFY EXISTING WEATHER FUNCTION
-========================= */
-
-function applyWeather(desc){
-
-desc=desc.toLowerCase();
-
-// existing effects...
-
-if(desc.includes("wind") || desc.includes("breeze")){
-startWind();
-}
-
-}
-
-
-/* =========================
-   MAP AUTO LOAD ADD ARROWS
-========================= */
-{% if weather %}
-setTimeout(()=>{
-drawWindArrows({{weather.lat}},{{weather.lon}});
-},1000);
-{% endif %}
-
-
-/* =========================
-   CHART (UNCHANGED)
-========================= */
-{% if temps %}
-new Chart(document.getElementById("chart"),{
-type:'line',
-data:{
-labels:{{labels|tojson}},
-datasets:[{data:{{temps|tojson}},borderColor:"cyan"}]
-}
-});
-{% endif %}
 
 </script>
 
