@@ -12,16 +12,17 @@
 
 <style>
 
+/* RESET */
 *{margin:0;padding:0;box-sizing:border-box;}
 
 body{
 font-family:'Poppins',sans-serif;
 display:flex;
+min-height:100vh;
 color:white;
-
 background: linear-gradient(135deg,#0f172a,#1e293b,#1e3a8a,#0ea5e9);
 background-size:300% 300%;
-animation:gradientMove 10s ease infinite;
+animation: gradientMove 10s ease infinite;
 }
 
 @keyframes gradientMove{
@@ -33,27 +34,57 @@ animation:gradientMove 10s ease infinite;
 /* SIDEBAR */
 .sidebar{
 width:220px;
-height:100vh;
 background:rgba(0,0,0,0.4);
 backdrop-filter:blur(20px);
 padding:20px;
 }
 
-.sidebar h2{margin-bottom:20px;}
-.sidebar a{
-display:block;
-padding:10px;
-margin:8px 0;
-color:white;
-text-decoration:none;
-border-radius:8px;
-}
-.sidebar a:hover{
-background:rgba(255,255,255,0.1);
+/* MAIN */
+.main{flex:1;padding:30px;}
+
+/* TOPBAR */
+.topbar{
+display:flex;
+justify-content:flex-end;
+gap:15px;
+margin-bottom:15px;
 }
 
-/* MAIN */
-.main{flex:1;padding:20px;}
+.topbar a{
+text-decoration:none;
+color:white;
+background:rgba(255,255,255,0.1);
+padding:6px 12px;
+border-radius:8px;
+}
+
+.user{opacity:0.8;}
+
+/* SEARCH */
+.search-box{
+display:flex;
+gap:10px;
+margin-bottom:10px;
+}
+
+.search-box input{
+flex:1;
+padding:12px;
+border-radius:12px;
+border:none;
+background:rgba(255,255,255,0.1);
+color:white;
+}
+
+/* BUTTON */
+button{
+padding:10px 16px;
+border-radius:12px;
+border:none;
+background:linear-gradient(135deg,#22c55e,#16a34a);
+color:white;
+cursor:pointer;
+}
 
 /* CARD */
 .card{
@@ -63,42 +94,6 @@ border-radius:20px;
 padding:20px;
 margin-top:20px;
 border:1px solid rgba(255,255,255,0.15);
-box-shadow:0 8px 32px rgba(0,0,0,0.3);
-}
-
-/* SEARCH */
-.search-box{
-display:flex;
-gap:10px;
-margin:15px 0;
-}
-
-.search-box input{
-flex:1;
-padding:12px;
-border-radius:10px;
-border:none;
-background:rgba(255,255,255,0.1);
-color:white;
-}
-
-.search-box button{
-padding:12px;
-border-radius:10px;
-border:none;
-background:linear-gradient(135deg,#22c55e,#16a34a);
-color:white;
-cursor:pointer;
-}
-
-/* LOCATION */
-.location-btn{
-padding:10px;
-border:none;
-border-radius:10px;
-background:rgba(255,255,255,0.1);
-color:white;
-cursor:pointer;
 }
 
 /* WEATHER */
@@ -107,7 +102,10 @@ display:flex;
 align-items:center;
 gap:20px;
 }
-.icon{font-size:50px;}
+
+.icon{font-size:60px;}
+.temp{font-size:48px;}
+.desc{opacity:0.8;}
 
 /* FORECAST */
 .forecast{
@@ -115,26 +113,45 @@ display:flex;
 gap:10px;
 flex-wrap:wrap;
 }
+
 .fcard{
 background:rgba(255,255,255,0.08);
-backdrop-filter:blur(10px);
-padding:15px;
-border-radius:15px;
-width:110px;
+padding:10px;
+border-radius:10px;
+width:100px;
 text-align:center;
-transition:0.3s;
-}
-.fcard:hover{
-transform:translateY(-5px);
-background:rgba(255,255,255,0.15);
 }
 
 /* MAP */
-#map{height:300px;border-radius:10px;}
-.fullscreen-map{
-position:fixed;
-top:0;left:0;width:100%;height:100%;
-z-index:9999;
+#map{
+height:300px;
+border-radius:12px;
+margin-top:10px;
+}
+
+/* LOADER */
+.skeleton{
+animation:pulse 1.5s infinite;
+}
+
+.skeleton-line{
+height:15px;
+background:rgba(255,255,255,0.2);
+margin:10px 0;
+border-radius:5px;
+}
+
+@keyframes pulse{
+0%{opacity:0.5;}
+50%{opacity:1;}
+100%{opacity:0.5;}
+}
+
+/* MOBILE */
+@media(max-width:768px){
+.sidebar{display:none;}
+.main{padding:15px;}
+.search-box{flex-direction:column;}
 }
 
 </style>
@@ -144,23 +161,37 @@ z-index:9999;
 
 <div class="sidebar">
 <h2>🌤 Weather</h2>
-<a href="/">Dashboard</a>
-<a href="/profile">Profile</a>
-<a href="/logout">Logout</a>
 </div>
 
 <div class="main">
 
 <h1>Weather Pro</h1>
 
+<!-- DASHBOARD NAV -->
+<div class="topbar">
+{% if session.get("user") %}
+<span class="user">👤 {{ session.get("user") }}</span>
+<a href="/profile">Profile</a>
+<a href="/logout">Logout</a>
+{% else %}
+<a href="/login">Login</a>
+<a href="/register">Register</a>
+{% endif %}
+</div>
+
 <form method="POST" class="search-box">
 <input name="city" placeholder="Enter city..." required>
 <button>Search</button>
 </form>
 
-<button class="location-btn" onclick="getLocation()">📍 Use Location</button>
+<button onclick="getLocation()">📍 Use Location</button>
 
-<!-- WEATHER -->
+<!-- LOADER -->
+<div id="loader" class="card skeleton" style="display:none;">
+<div class="skeleton-line"></div>
+<div class="skeleton-line"></div>
+</div>
+
 {% if weather %}
 <div class="card">
 <h2>{{ weather.city }}</h2>
@@ -169,23 +200,23 @@ z-index:9999;
 <div class="icon">
 {% if "cloud" in weather.desc %}☁️
 {% elif "rain" in weather.desc %}🌧️
+{% elif "snow" in weather.desc %}❄️
 {% elif "clear" in weather.desc %}☀️
 {% else %}🌤️
 {% endif %}
 </div>
 
 <div>
-<h1>{{ weather.temp }}°C</h1>
-<p>{{ weather.desc }}</p>
+<h1 class="temp">{{ weather.temp }}°</h1>
+<p class="desc">{{ weather.desc }}</p>
 </div>
 </div>
 </div>
 {% endif %}
 
-<!-- FORECAST -->
 {% if forecast %}
 <div class="card">
-<h3>📅 Forecast</h3>
+<h3>Forecast</h3>
 <div class="forecast">
 {% for d in forecast %}
 <div class="fcard">
@@ -197,31 +228,15 @@ z-index:9999;
 </div>
 {% endif %}
 
-<!-- CHART -->
 {% if temps %}
 <div class="card">
 <canvas id="chart"></canvas>
 </div>
 {% endif %}
 
-<!-- MAP ONLY AFTER SEARCH -->
 {% if weather %}
 <div class="card">
 <h3>🌍 Map</h3>
-
-<div style="display:flex; gap:10px; flex-wrap:wrap;">
-<button onclick="setMap('normal')">Normal</button>
-<button onclick="setMap('satellite')">Satellite</button>
-
-<button onclick="setLayer('temp')">🔥 Temp</button>
-<button onclick="setLayer('rain')">🌧️ Rain</button>
-<button onclick="setLayer('clouds')">☁️ Clouds</button>
-<button onclick="setLayer('wind')">🌪️ Wind</button>
-
-<button onclick="setLayer('clear')">Clear</button>
-<button onclick="toggleFullscreen()">Fullscreen</button>
-</div>
-
 <div id="map"></div>
 </div>
 {% endif %}
@@ -230,99 +245,19 @@ z-index:9999;
 
 <script>
 
-let map, baseLayer, overlayLayer;
-const API_KEY="{{ api_key }}";
-
-function loadMap(lat,lon,text=""){
-if(map){map.remove();}
-map=L.map('map').setView([lat,lon],10);
-
-baseLayer=L.tileLayer(
-'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-).addTo(map);
-
-L.marker([lat,lon]).addTo(map)
-.bindPopup(text)
-.openPopup();
-}
-
-function setMap(type){
-map.removeLayer(baseLayer);
-
-if(type==="satellite"){
-baseLayer=L.tileLayer(
-'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
-).addTo(map);
-}else{
-baseLayer=L.tileLayer(
-'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-).addTo(map);
-}
-}
-
-function setLayer(type){
-if(overlayLayer){map.removeLayer(overlayLayer);}
-
-if(type==="temp"){
-overlayLayer=L.tileLayer(
-`https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${API_KEY}`
-).addTo(map);
-
-}else if(type==="rain"){
-overlayLayer=L.tileLayer(
-`https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${API_KEY}`
-).addTo(map);
-
-}else if(type==="clouds"){
-overlayLayer=L.tileLayer(
-`https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${API_KEY}`
-).addTo(map);
-
-}else if(type==="wind"){
-overlayLayer=L.tileLayer(
-`https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${API_KEY}`
-).addTo(map);
-}
-}
-
-function getLocation(){
-navigator.geolocation.getCurrentPosition(pos=>{
-let lat=pos.coords.latitude;
-let lon=pos.coords.longitude;
-
-fetch(`/location?lat=${lat}&lon=${lon}`)
-.then(r=>r.json())
-.then(d=>{
-document.querySelector("input[name='city']").value=d.city;
-loadMap(lat,lon,`${d.temp}°C ${d.desc}`);
+// LOADER
+document.querySelector("form").addEventListener("submit",()=>{
+document.getElementById("loader").style.display="block";
 });
-});
-}
 
-{% if weather %}
-loadMap({{ weather.lat }}, {{ weather.lon }},
-"{{ weather.temp }}°C {{ weather.desc }}");
-{% endif %}
-
-function toggleFullscreen(){
-document.getElementById("map").classList.toggle("fullscreen-map");
-setTimeout(()=>{map.invalidateSize();},300);
-}
-
+// CHART
 {% if temps %}
 new Chart(document.getElementById("chart"),{
 type:'line',
 data:{
 labels:{{labels|tojson}},
-datasets:[{
-data:{{temps|tojson}},
-borderColor:"#38bdf8",
-backgroundColor:"rgba(56,189,248,0.2)",
-fill:true,
-tension:0.4
-}]
-},
-options:{plugins:{legend:{display:false}}}
+datasets:[{data:{{temps|tojson}},borderColor:"cyan"}]
+}
 });
 {% endif %}
 
