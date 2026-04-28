@@ -1,153 +1,193 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weather Pro</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+* {margin:0; padding:0; box-sizing:border-box;}
+
 body {
     font-family: 'Poppins', sans-serif;
-    margin: 0;
+    display: flex;
     background: linear-gradient(135deg,#0f172a,#1e293b);
     color: white;
 }
 
-/* Container */
-.container {
-    max-width: 900px;
-    margin: auto;
-    padding: 30px;
+/* 🌟 Sidebar */
+.sidebar {
+    width: 220px;
+    height: 100vh;
+    background: #020617;
+    padding: 20px;
 }
 
-/* Header */
-h1 {
-    font-weight: 700;
-}
-
-/* Navbar links */
-.top-links a {
+.sidebar h2 {
     color: #38bdf8;
-    margin-right: 10px;
-    text-decoration: none;
+    margin-bottom: 20px;
 }
 
-/* Search box */
-.search-box {
+.sidebar a {
+    display: block;
+    margin: 15px 0;
+    color: white;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.sidebar a:hover {
+    color: #22c55e;
+}
+
+/* 📱 Main */
+.main {
+    flex: 1;
+    padding: 20px;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Search */
+.search {
+    margin-top: 20px;
     display: flex;
     gap: 10px;
-    margin-top: 15px;
 }
 
 input {
-    flex: 1;
     padding: 12px;
     border-radius: 10px;
     border: none;
+    width: 250px;
 }
 
 button {
-    padding: 12px 20px;
+    padding: 12px;
     border-radius: 10px;
     border: none;
     background: #22c55e;
     color: white;
     cursor: pointer;
-    font-weight: 500;
 }
 
-button:hover {
-    background: #16a34a;
-}
-
-/* Glass card */
+/* 🌟 Cards */
 .card {
     background: rgba(255,255,255,0.08);
-    padding: 25px;
+    padding: 20px;
     margin-top: 20px;
     border-radius: 20px;
     backdrop-filter: blur(10px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
-/* Weather title */
-.city {
-    font-size: 28px;
-    font-weight: 600;
-}
-
-/* Forecast grid */
-.forecast {
+/* Weather grid */
+.grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px,1fr));
-    gap: 15px;
-    margin-top: 15px;
+    grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+    gap: 20px;
 }
 
-.forecast div {
-    background: rgba(255,255,255,0.05);
-    padding: 10px;
-    border-radius: 10px;
+/* 🌤 Animation */
+.icon {
+    font-size: 40px;
+    animation: float 2s infinite ease-in-out;
 }
 
-/* Error */
-.error {
-    color: #ff6b6b;
-    margin-top: 10px;
+@keyframes float {
+    0%,100% {transform: translateY(0);}
+    50% {transform: translateY(-8px);}
+}
+
+/* 📱 Responsive */
+@media(max-width:768px){
+    body {flex-direction: column;}
+    .sidebar {
+        width: 100%;
+        height: auto;
+        display: flex;
+        justify-content: space-around;
+    }
+    .main {padding: 10px;}
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<h1>🌤 Weather Pro</h1>
-
-<div class="top-links">
-<a href="/profile">👤 Profile</a>
-<a href="/logout">🚪 Logout</a>
+<!-- 🌟 Sidebar -->
+<div class="sidebar">
+    <h2>🌤 Weather</h2>
+    <a href="/">🏠 Dashboard</a>
+    <a href="/profile">👤 Profile</a>
+    <a href="/logout">🚪 Logout</a>
 </div>
 
-<!-- Search -->
-<form method="POST" class="search-box">
+<!-- 📱 Main -->
+<div class="main">
+
+<div class="navbar">
+<h1>Weather Pro</h1>
+</div>
+
+<!-- 🔍 Search -->
+<form method="POST" class="search">
 <input name="city" placeholder="Enter city">
 <button>Search</button>
 </form>
 
-<!-- Location -->
+<br>
+
+<!-- 📍 Location -->
 <button type="button" onclick="getLocation()">📍 Use My Location</button>
 
 {% if error %}
-<p class="error">{{ error }}</p>
+<p style="color:red">{{ error }}</p>
 {% endif %}
 
-<!-- Weather -->
+<!-- 🌤 Weather -->
 {% if weather %}
 <div class="card">
-<p class="city">{{ weather.city }}</p>
+
+<h2>{{ weather.city }}</h2>
+
+<div class="icon">
+{% if "cloud" in weather.desc %}☁️
+{% elif "rain" in weather.desc %}🌧️
+{% elif "clear" in weather.desc %}☀️
+{% else %}🌤️
+{% endif %}
+</div>
 
 <p>🌡 {{ weather.temp }}°C</p>
-<p>☁ {{ weather.desc }}</p>
+<p>💧 {{ weather.humidity }}%</p>
+<p>{{ weather.desc }}</p>
 
 <a href="https://www.google.com/maps?q={{ weather.city }}" target="_blank">
-📍 View on Map
+📍 Open Map
 </a>
 
-<p style="color:#4ade80;">{{ advice }}</p>
+<p style="color:#4ade80">{{ advice }}</p>
+
 </div>
 {% endif %}
 
-<!-- Forecast -->
+<!-- 📅 Forecast -->
 {% if forecast %}
 <div class="card">
-<h3>📅 5-Day Forecast</h3>
+<h3>📅 Forecast</h3>
 
-<div class="forecast">
+<div class="grid">
 {% for day in forecast %}
-<div>
-<p><b>{{ day.temp }}°C</b></p>
+<div class="card">
+<p>{{ day.temp }}°C</p>
 <p>{{ day.desc }}</p>
 </div>
 {% endfor %}
@@ -156,7 +196,7 @@ button:hover {
 </div>
 {% endif %}
 
-<!-- Chart -->
+<!-- 📊 Chart -->
 {% if temps %}
 <div class="card">
 <canvas id="chart"></canvas>
@@ -167,7 +207,7 @@ button:hover {
 
 <script>
 
-// 🌍 Location
+// 🌍 LOCATION
 function getLocation(){
     navigator.geolocation.getCurrentPosition(function(pos){
         let lat = pos.coords.latitude;
