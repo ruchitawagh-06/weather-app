@@ -7,9 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 
@@ -20,14 +17,23 @@ color:white;
 transition:1s;
 }
 
-/* DAY */
-body.day{
-background:linear-gradient(135deg,#60a5fa,#38bdf8,#facc15);
+/* DAY/NIGHT */
+body.day{background:linear-gradient(135deg,#60a5fa,#38bdf8,#facc15);}
+body.night{background:linear-gradient(135deg,#020617,#0f172a,#1e293b);}
+
+/* 🔥 FIXED ANIMATION LAYERS */
+#rain,#snow,#stars,#lightning,#moon{
+position:fixed;
+width:100%;
+height:100%;
+pointer-events:none;  /* IMPORTANT */
+z-index:0;
 }
 
-/* NIGHT */
-body.night{
-background:linear-gradient(135deg,#020617,#0f172a,#1e293b);
+/* UI ABOVE */
+.sidebar,.main,.card,button,input{
+position:relative;
+z-index:5;
 }
 
 /* SIDEBAR */
@@ -49,7 +55,6 @@ backdrop-filter:blur(20px);
 border-radius:20px;
 padding:20px;
 margin-top:20px;
-border:1px solid rgba(255,255,255,0.15);
 }
 
 /* SEARCH */
@@ -62,8 +67,7 @@ background:rgba(255,255,255,0.1);color:white;
 /* BUTTON */
 button{
 padding:10px;border-radius:10px;border:none;
-background:linear-gradient(135deg,#22c55e,#16a34a);
-color:white;cursor:pointer;
+background:#22c55e;color:white;cursor:pointer;
 }
 
 /* WEATHER */
@@ -77,11 +81,7 @@ background:rgba(255,255,255,0.08);
 padding:10px;border-radius:10px;width:100px;text-align:center;
 }
 
-/* MAP */
-#map{height:300px;border-radius:10px;}
-
 /* 🌧️ RAIN */
-#rain,.snow,#stars{position:fixed;width:100%;height:100%;pointer-events:none;}
 .drop{
 position:absolute;width:2px;height:15px;background:white;
 animation:rain 0.5s linear infinite;
@@ -97,7 +97,7 @@ animation:fall linear infinite;
 
 /* 🌙 MOON */
 #moon{
-position:fixed;width:70px;height:70px;border-radius:50%;
+width:70px;height:70px;border-radius:50%;
 background:white;top:10%;right:10%;opacity:0;
 }
 body.night #moon{opacity:1;}
@@ -110,10 +110,7 @@ animation:twinkle 2s infinite alternate;
 @keyframes twinkle{from{opacity:0.2;}to{opacity:1;}}
 
 /* ⚡ LIGHTNING */
-#lightning{
-position:fixed;width:100%;height:100%;
-background:white;opacity:0;
-}
+#lightning{background:white;opacity:0;}
 .flash{animation:flash 0.3s;}
 @keyframes flash{50%{opacity:0.8;}}
 
@@ -122,16 +119,19 @@ background:white;opacity:0;
 
 <body class="day">
 
+<!-- ANIMATIONS -->
 <div id="rain"></div>
 <div id="snow"></div>
 <div id="stars"></div>
 <div id="moon"></div>
 <div id="lightning"></div>
 
+<!-- SIDEBAR -->
 <div class="sidebar">
 <h2>🌤 Weather</h2>
 </div>
 
+<!-- MAIN -->
 <div class="main">
 
 <h1>Weather Pro</h1>
@@ -186,13 +186,6 @@ background:white;opacity:0;
 </div>
 {% endif %}
 
-<!-- MAP -->
-{% if weather %}
-<div class="card">
-<div id="map"></div>
-</div>
-{% endif %}
-
 </div>
 
 <script>
@@ -203,9 +196,10 @@ const hour=new Date().getHours();
 document.body.className = (hour>=6 && hour<18) ? "day":"night";
 }
 
-// 🌧️ RAIN
+// RAIN
 function startRain(){
 const rain=document.getElementById("rain");
+rain.innerHTML="";
 for(let i=0;i<80;i++){
 let d=document.createElement("div");
 d.className="drop";
@@ -214,9 +208,10 @@ rain.appendChild(d);
 }
 }
 
-// ❄️ SNOW
+// SNOW
 function startSnow(){
 const snow=document.getElementById("snow");
+snow.innerHTML="";
 for(let i=0;i<50;i++){
 let f=document.createElement("div");
 f.className="snowflake";
@@ -227,20 +222,25 @@ snow.appendChild(f);
 }
 }
 
-// ⚡ LIGHTNING
+// LIGHTNING
+let lightningStarted=false;
 function startLightning(){
+if(lightningStarted) return;
+lightningStarted=true;
+
 setInterval(()=>{
-if(Math.random()>0.8){
+if(Math.random()>0.85){
 let l=document.getElementById("lightning");
 l.classList.add("flash");
-setTimeout(()=>l.classList.remove("flash"),300);
+setTimeout(()=>l.classList.remove("flash"),200);
 }
-},3000);
+},4000);
 }
 
-// ✨ STARS
+// STARS
 function createStars(){
 const s=document.getElementById("stars");
+s.innerHTML="";
 for(let i=0;i<100;i++){
 let star=document.createElement("div");
 star.className="star";
@@ -250,9 +250,12 @@ s.appendChild(star);
 }
 }
 
-// WEATHER EFFECTS
+// WEATHER APPLY
 function applyWeather(desc){
 desc=desc.toLowerCase();
+
+document.getElementById("rain").innerHTML="";
+document.getElementById("snow").innerHTML="";
 
 if(desc.includes("rain")){
 startRain();
