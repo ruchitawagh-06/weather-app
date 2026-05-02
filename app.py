@@ -4,17 +4,15 @@ import requests, os
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-API_KEY = os.environ.get("API_KEY")  # OpenWeather key
+API_KEY = os.environ.get("API_KEY")
 
 
-# LOGIN
+# ================= LOGIN =================
 @app.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-
-        print("LOGIN:", username, password)  # DEBUG
 
         if username == "admin" and password == "123":
             session["user"] = username
@@ -25,14 +23,12 @@ def login():
     return render_template("login.html")
 
 
-# REGISTER
+# ================= REGISTER =================
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-
-        print("REGISTER:", username, password)  # DEBUG
 
         session["user"] = username
         return redirect("/")
@@ -40,25 +36,20 @@ def register():
     return render_template("register.html")
 
 
-# LOGOUT
+# ================= LOGOUT =================
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
 
 
-# PROFILE
+# ================= PROFILE =================
 @app.route("/profile")
 def profile():
     if "user" not in session:
         return redirect("/login")
 
     return f"<h1>Welcome {session['user']}</h1>"
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
 
 
 # ================= HOME =================
@@ -73,7 +64,6 @@ def home():
     if request.method == "POST":
         city = request.form.get("city")
 
-        # CURRENT WEATHER
         url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
         res = requests.get(url).json()
 
@@ -82,18 +72,16 @@ def home():
                 "city": city,
                 "temp": res["main"]["temp"],
                 "desc": res["weather"][0]["description"],
-                "lat": res["coord"]["lat"],   # IMPORTANT
-                "lon": res["coord"]["lon"]    # IMPORTANT
+                "lat": res["coord"]["lat"],
+                "lon": res["coord"]["lon"]
             }
 
-        # FORECAST (5 days)
         f_url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={API_KEY}&units=metric"
         f_res = requests.get(f_url).json()
 
         if str(f_res.get("cod")) == "200":
             forecast = []
 
-            # Pick every 8th item (~1 per day)
             for i in range(0, 40, 8):
                 item = f_res["list"][i]
 
@@ -111,7 +99,7 @@ def home():
         forecast=forecast,
         temps=temps,
         labels=labels,
-        api_key=API_KEY   # for map layers
+        api_key=API_KEY
     )
 
 
@@ -133,5 +121,4 @@ def location():
 
 # ================= RUN =================
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
