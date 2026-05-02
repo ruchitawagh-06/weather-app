@@ -7,14 +7,6 @@ app.secret_key = "secret123"
 API_KEY = os.environ.get("API_KEY")  # OpenWeather key
 
 
-
-
-# HOME
-@app.route("/", methods=["GET","POST"])
-def index():
-    return render_template("index.html")
-
-
 # LOGIN
 @app.route("/login", methods=["GET","POST"])
 def login():
