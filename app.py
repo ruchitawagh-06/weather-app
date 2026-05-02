@@ -6,6 +6,69 @@ app.secret_key = "secret123"
 
 API_KEY = os.environ.get("API_KEY")  # OpenWeather key
 
+
+
+
+# HOME
+@app.route("/", methods=["GET","POST"])
+def index():
+    return render_template("index.html")
+
+
+# LOGIN
+@app.route("/login", methods=["GET","POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        print("LOGIN:", username, password)  # DEBUG
+
+        if username == "admin" and password == "123":
+            session["user"] = username
+            return redirect("/")
+        else:
+            return "Invalid login"
+
+    return render_template("login.html")
+
+
+# REGISTER
+@app.route("/register", methods=["GET","POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        print("REGISTER:", username, password)  # DEBUG
+
+        session["user"] = username
+        return redirect("/")
+
+    return render_template("register.html")
+
+
+# LOGOUT
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
+
+# PROFILE
+@app.route("/profile")
+def profile():
+    if "user" not in session:
+        return redirect("/login")
+
+    return f"<h1>Welcome {session['user']}</h1>"
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
+
 # ================= HOME =================
 @app.route("/", methods=["GET", "POST"])
 def home():
