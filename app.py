@@ -117,8 +117,15 @@ def location():
         "temp": res["main"]["temp"],
         "desc": res["weather"][0]["description"]
     })
-
-
-# ================= RUN =================
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
+
+
+
+
+
+
+
+
