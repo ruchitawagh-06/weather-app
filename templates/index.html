@@ -11,8 +11,6 @@
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
-
-/* ===== YOUR STYLE (UNCHANGED) ===== */
 *{margin:0;padding:0;box-sizing:border-box;}
 
 body{
@@ -36,7 +34,6 @@ width:220px;
 background:rgba(0,0,0,0.4);
 backdrop-filter:blur(20px);
 padding:20px;
-transition:0.4s;
 }
 
 .main{flex:1;padding:30px;}
@@ -104,7 +101,6 @@ border-radius:12px;
 margin-top:10px;
 }
 
-/* ===== sidebar user ===== */
 .side-user{
 display:flex;
 flex-direction:column;
@@ -125,7 +121,6 @@ background:rgba(255,255,255,0.1);
 
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
 <h2>🌤 Weather</h2>
 
@@ -143,10 +138,8 @@ background:rgba(255,255,255,0.1);
 <a href="/register">Register</a>
 </div>
 {% endif %}
-
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
 <h1>Weather Pro</h1>
@@ -194,6 +187,14 @@ background:rgba(255,255,255,0.1);
 </div>
 {% endif %}
 
+<!-- ✅ CHART ADDED BACK -->
+{% if temps %}
+<div class="card">
+<h3>📊 Temperature Trend</h3>
+<canvas id="chart"></canvas>
+</div>
+{% endif %}
+
 {% if weather %}
 <div class="card">
 <h3>🌍 Map</h3>
@@ -205,12 +206,26 @@ background:rgba(255,255,255,0.1);
 
 <script>
 
+{% if temps %}
+new Chart(document.getElementById("chart"),{
+type:'line',
+data:{
+labels:{{labels|tojson}},
+datasets:[{
+data:{{temps|tojson}},
+borderColor:"cyan",
+fill:false
+}]
+}
+});
+{% endif %}
+
 {% if weather %}
 
-// INIT MAP
+// MAP INIT
 var map = L.map('map').setView([{{ weather.lat }}, {{ weather.lon }}], 10);
 
-// BASE MAPS
+// BASE
 var normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 var satellite = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png');
 
@@ -219,16 +234,13 @@ var clouds = L.tileLayer(`https://tile.openweathermap.org/map/clouds_new/{z}/{x}
 var temp = L.tileLayer(`https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid={{ api_key }}`);
 var wind = L.tileLayer(`https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid={{ api_key }}`);
 
-// DEFAULT
 normal.addTo(map);
 
-// CONTROLS
 L.control.layers(
-    {"Normal": normal, "Satellite": satellite},
-    {"Clouds": clouds, "Temp": temp, "Wind": wind}
+{"Normal": normal, "Satellite": satellite},
+{"Clouds": clouds, "Temp": temp, "Wind": wind}
 ).addTo(map);
 
-// MARKER
 L.marker([{{ weather.lat }}, {{ weather.lon }}])
 .addTo(map)
 .bindPopup("{{ weather.city }}")
