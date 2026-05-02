@@ -12,7 +12,7 @@
 
 <style>
 
-/* RESET */
+/* ===== YOUR ORIGINAL CSS (UNCHANGED) ===== */
 *{margin:0;padding:0;box-sizing:border-box;}
 
 body{
@@ -31,7 +31,6 @@ animation: gradientMove 10s ease infinite;
 100%{background-position:0% 50%;}
 }
 
-/* SIDEBAR */
 .sidebar{
 width:220px;
 background:rgba(0,0,0,0.4);
@@ -39,10 +38,8 @@ backdrop-filter:blur(20px);
 padding:20px;
 }
 
-/* MAIN */
 .main{flex:1;padding:30px;}
 
-/* SEARCH */
 .search-box{
 display:flex;
 gap:10px;
@@ -58,7 +55,6 @@ background:rgba(255,255,255,0.1);
 color:white;
 }
 
-/* BUTTON */
 button{
 padding:10px 16px;
 border-radius:12px;
@@ -68,7 +64,6 @@ color:white;
 cursor:pointer;
 }
 
-/* CARD */
 .card{
 background:rgba(255,255,255,0.08);
 backdrop-filter:blur(20px);
@@ -78,7 +73,6 @@ margin-top:20px;
 border:1px solid rgba(255,255,255,0.15);
 }
 
-/* WEATHER */
 .weather-main{
 display:flex;
 align-items:center;
@@ -89,7 +83,6 @@ gap:20px;
 .temp{font-size:48px;}
 .desc{opacity:0.8;}
 
-/* FORECAST */
 .forecast{
 display:flex;
 gap:10px;
@@ -104,14 +97,12 @@ width:100px;
 text-align:center;
 }
 
-/* MAP */
 #map{
 height:300px;
 border-radius:12px;
 margin-top:10px;
 }
 
-/* LOADER */
 .skeleton{
 animation:pulse 1.5s infinite;
 }
@@ -129,7 +120,8 @@ border-radius:5px;
 100%{opacity:0.5;}
 }
 
-/* SIDEBAR USER MENU */
+/* ===== ONLY NEW ADDITIONS (SAFE) ===== */
+
 .side-user{
 display:flex;
 flex-direction:column;
@@ -155,6 +147,33 @@ transition:0.3s;
 background:rgba(255,255,255,0.2);
 }
 
+/* ACTIVE LINK */
+.side-user a.active{
+background:#22c55e;
+font-weight:500;
+}
+
+/* TOGGLE BUTTON */
+.toggle-btn{
+background:none;
+border:none;
+color:white;
+font-size:20px;
+cursor:pointer;
+margin-bottom:10px;
+}
+
+/* COLLAPSE */
+.sidebar.collapsed{
+width:70px;
+}
+
+.sidebar.collapsed h2,
+.sidebar.collapsed p,
+.sidebar.collapsed a{
+display:none;
+}
+
 /* MOBILE */
 @media(max-width:768px){
 .sidebar{display:none;}
@@ -169,6 +188,9 @@ background:rgba(255,255,255,0.2);
 
 <!-- SIDEBAR -->
 <div class="sidebar">
+
+<button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+
 <h2>🌤 Weather</h2>
 
 <hr style="opacity:0.2; margin:15px 0;">
@@ -176,19 +198,25 @@ background:rgba(255,255,255,0.2);
 {% if session.get("user") %}
 <div class="side-user">
 <p>👤 {{ session.get("user") }}</p>
-<a href="/profile">Profile</a>
-<a href="/logout">Logout</a>
+
+<a href="/profile" class="{% if request.path == '/profile' %}active{% endif %}">👤 Profile</a>
+
+<a href="/logout">🚪 Logout</a>
 </div>
+
 {% else %}
 <div class="side-user">
-<a href="/login">Login</a>
-<a href="/register">Register</a>
+
+<a href="/login" class="{% if request.path == '/login' %}active{% endif %}">🔐 Login</a>
+
+<a href="/register" class="{% if request.path == '/register' %}active{% endif %}">📝 Register</a>
+
 </div>
 {% endif %}
 
 </div>
 
-<!-- MAIN CONTENT -->
+<!-- MAIN -->
 <div class="main">
 
 <h1>Weather Pro</h1>
@@ -200,7 +228,6 @@ background:rgba(255,255,255,0.2);
 
 <button onclick="getLocation()">📍 Use Location</button>
 
-<!-- LOADER -->
 <div id="loader" class="card skeleton" style="display:none;">
 <div class="skeleton-line"></div>
 <div class="skeleton-line"></div>
@@ -258,6 +285,11 @@ background:rgba(255,255,255,0.2);
 </div>
 
 <script>
+
+// SIDEBAR TOGGLE
+function toggleSidebar(){
+document.querySelector(".sidebar").classList.toggle("collapsed");
+}
 
 // LOADER
 document.querySelector("form").addEventListener("submit",()=>{
