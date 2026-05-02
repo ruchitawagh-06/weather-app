@@ -56,6 +56,10 @@ def profile():
 @app.route("/", methods=["GET", "POST"])
 def home():
 
+    # 🔴 NOT LOGGED IN → REDIRECT TO LOGIN
+    if "user" not in session:
+        return redirect("/login")
+
     weather = None
     forecast = None
     temps = []
@@ -101,7 +105,6 @@ def home():
         labels=labels,
         api_key=API_KEY
     )
-
 
 # ================= LOCATION =================
 @app.route("/location")
